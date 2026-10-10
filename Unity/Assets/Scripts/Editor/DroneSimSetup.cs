@@ -9,6 +9,18 @@ public static class DroneSimSetup
     const string MatDir = "Assets/Materials";
     const string ScenePath = "Assets/Scenes/ParkingLot.unity";
     const string CatalogPath = "Assets/Props/PropCatalog.asset";
+    const string DronePrefabPath = "Assets/Prefabs/Drone.prefab";
+    static readonly string[] DroneMaterialPaths =
+    {
+        "Assets/Materials/Battery_Dark.mat",
+        "Assets/Materials/Drone_Body.mat",
+        "Assets/Materials/Drone_Rotor.mat",
+        "Assets/Materials/Drone_Shell.mat",
+        "Assets/Materials/LED_Blue.mat",
+        "Assets/Materials/LED_Red.mat",
+        "Assets/Materials/Lens_Glass.mat",
+        "Assets/Materials/Motor_Metal.mat",
+    };
 
     // name, model path, real-world size (m), model rotation, turn so the long axis runs along Z
     static readonly (string name, string path, float size, Vector3 rot, bool alongZ)[] Models =
@@ -37,13 +49,13 @@ public static class DroneSimSetup
             return;
         }
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        if (!UpgradeDroneMaterials()) return;
 
         var catalog = BuildCatalog();
 
         var wall = LitMaterial("Wall", new Color(0.55f, 0.57f, 0.6f));
         var win = TransparentLitMaterial("Win", new Color(0.1f, 0.9f, 0.25f, 0.35f), new Color(0.03f, 0.35f, 0.08f));
         var invisible = TransparentLitMaterial("InvisibleWall", new Color(0.55f, 0.75f, 1f, 0.15f), Color.black);
-        var droneMat = LitMaterial("Drone", new Color(0.03f, 0.03f, 0.03f));
         var ghost = UnlitMaterial("Ghost", new Color(1f, 0.85f, 0.1f));
         var path = UnlitMaterial("Path", new Color(1f, 0.85f, 0.1f));
         var trail = UnlitMaterial("Trail", new Color(0.2f, 0.6f, 1f));
@@ -65,13 +77,14 @@ public static class DroneSimSetup
 
         BuildParkingLot(map, props, asphalt, sidewalk, paint);
 
-        // Drone: small black cube
+        // Keep the controller collider and A* movement separate from the visual model.
         var droneGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
         droneGo.name = "Drone";
         droneGo.layer = 2; // Ignore Raycast
         droneGo.transform.position = map.droneStart;
         droneGo.transform.localScale = Vector3.one * 0.4f;
-        droneGo.GetComponent<Renderer>().sharedMaterial = droneMat;
+        droneGo.GetComponent<Renderer>().enabled = false;
+        AddDroneVisual(droneGo.transform);
         var rb = droneGo.AddComponent<Rigidbody>();
         rb.isKinematic = true;
         rb.useGravity = false;
@@ -108,6 +121,97 @@ public static class DroneSimSetup
         EditorSceneManager.SaveScene(scene, ScenePath);
         Selection.activeGameObject = droneGo;
         Debug.Log($"[DroneSim] Parking lot built: {map.Count} cubes, {props.Count} objects, drone at {map.droneStart} → {ScenePath}");
+    }
+
+    [MenuItem("Drone Sim/Replace Parking Lot Drone Visual")]
+    public static void ReplaceParkingLotDroneVisual()
+    {
+        if (EditorApplication.isPlaying)
+        {
+            Debug.LogWarning("Exit Play mode before replacing the drone visual.");
+            return;
+        }
+        if (!UpgradeDroneMaterials()) return;
+
+        var scene = EditorSceneManager.OpenScene(ScenePath);
+        var drone = GameObject.Find("Drone");
+        if (drone == null)
+        {
+            Debug.LogError($"No Drone object found in {ScenePath}.");
+            return;
+        }
+
+        var existing = drone.transform.Find("Drone Visual");
+        if (existing != null) Object.DestroyImmediate(existing.gameObject);
+        var renderer = drone.GetComponent<Renderer>();
+        if (renderer != null) renderer.enabled = false;
+        AddDroneVisual(drone.transform);
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+    }
+
+    static GameObject AddDroneVisual(Transform parent)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(DronePrefabPath);
+        if (prefab == null)
+        {
+            Debug.LogError($"Drone prefab not found at {DronePrefabPath}.");
+            return null;
+        }
+
+        var visual = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+        visual.name = "Drone Visual";
+        visual.transform.SetParent(parent, false);
+        visual.transform.localPosition = Vector3.zero;
+        visual.transform.localRotation = Quaternion.identity;
+        visual.transform.localScale = Vector3.one * 2.5f;
+        SetLayerRecursively(visual.transform, 2);
+        return visual;
+    }
+
+    static bool UpgradeDroneMaterials()
+    {
+        var shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
+        {
+            Debug.LogError("Could not find the Universal Render Pipeline/Lit shader for the drone materials.");
+            return false;
+        }
+
+        foreach (var path in DroneMaterialPaths)
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                Debug.LogError($"Drone material not found at {path}.");
+                return false;
+            }
+            if (material.shader == shader) continue;
+
+            var color = material.HasProperty("_Color") ? material.GetColor("_Color") : Color.white;
+            var metallic = material.HasProperty("_Metallic") ? material.GetFloat("_Metallic") : 0f;
+            var smoothness = material.HasProperty("_Glossiness") ? material.GetFloat("_Glossiness") : 0.5f;
+            var emission = material.HasProperty("_EmissionColor") ? material.GetColor("_EmissionColor") : Color.black;
+            var hasEmission = material.IsKeywordEnabled("_EMISSION");
+            material.shader = shader;
+            material.SetColor("_BaseColor", color);
+            material.SetFloat("_Metallic", metallic);
+            material.SetFloat("_Smoothness", smoothness);
+            if (hasEmission)
+            {
+                material.EnableKeyword("_EMISSION");
+                material.SetColor("_EmissionColor", emission);
+            }
+            EditorUtility.SetDirty(material);
+        }
+        AssetDatabase.SaveAssets();
+        return true;
+    }
+
+    static void SetLayerRecursively(Transform root, int layer)
+    {
+        root.gameObject.layer = layer;
+        foreach (Transform child in root) SetLayerRecursively(child, layer);
     }
 
     // ---------- parking lot layout (1 unit = 1 m; asphalt top at y = -0.5, the builder's ground plane) ----------

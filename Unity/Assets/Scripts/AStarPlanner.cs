@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// 6-connected grid A* over the cell map. The drone has full knowledge of the world:
-/// any cube except a win cube is solid, and the target is the nearest win cube.
+/// walls and placed props are obstacles, and the target is the nearest win cube.
 public static class AStarPlanner
 {
+    const float DroneClearance = 0.3f;
+
     // Neighbour order: +X, -X, +Y, -Y, +Z, -Z
     public static readonly Vector3Int[] Dirs =
     {
@@ -29,6 +31,7 @@ public static class AStarPlanner
         var result = new Result();
 
         var goals = new List<Vector3Int>();
+        var propBounds = new List<Bounds>();
         var min = start;
         var max = start;
         foreach (var kv in map.Cells)
@@ -36,6 +39,17 @@ public static class AStarPlanner
             min = Vector3Int.Min(min, kv.Key);
             max = Vector3Int.Max(max, kv.Key);
             if (kv.Value.type == CellType.Win) goals.Add(kv.Key);
+        }
+        if (map.props != null)
+        {
+            foreach (var prop in map.props.GetComponentsInChildren<Prop>())
+            {
+                if (prop == null || !PropSet.RendererBounds(prop.gameObject, out var bounds)) continue;
+                min = Vector3Int.Min(min, Vector3Int.FloorToInt(bounds.min));
+                max = Vector3Int.Max(max, Vector3Int.CeilToInt(bounds.max));
+                bounds.Expand(Vector3.one * (DroneClearance * 2f));
+                propBounds.Add(bounds);
+            }
         }
         if (goals.Count == 0)
         {
@@ -47,6 +61,29 @@ public static class AStarPlanner
         min -= Vector3Int.one;
         max += Vector3Int.one;
         min.y = Mathf.Max(min.y, 0);
+
+        var blockedByProps = new HashSet<Vector3Int>();
+        foreach (var bounds in propBounds)
+        {
+            int minX = Mathf.Max(min.x, Mathf.CeilToInt(bounds.min.x));
+            int minY = Mathf.Max(min.y, Mathf.CeilToInt(bounds.min.y));
+            int minZ = Mathf.Max(min.z, Mathf.CeilToInt(bounds.min.z));
+            int maxX = Mathf.Min(max.x, Mathf.FloorToInt(bounds.max.x));
+            int maxY = Mathf.Min(max.y, Mathf.FloorToInt(bounds.max.y));
+            int maxZ = Mathf.Min(max.z, Mathf.FloorToInt(bounds.max.z));
+            for (int x = minX; x <= maxX; x++)
+                for (int y = minY; y <= maxY; y++)
+                    for (int z = minZ; z <= maxZ; z++)
+                    {
+                        var p = new Vector3Int(x, y, z);
+                        if (bounds.Contains(p)) blockedByProps.Add(p);
+                    }
+        }
+        if (blockedByProps.Contains(start))
+        {
+            result.failReason = "start blocked by object";
+            return result;
+        }
 
         var g = new Dictionary<Vector3Int, int> { [start] = 0 };
         var cameFrom = new Dictionary<Vector3Int, Vector3Int>();
@@ -80,6 +117,7 @@ public static class AStarPlanner
                 var n = cur + d;
                 if (n.x < min.x || n.y < min.y || n.z < min.z || n.x > max.x || n.y > max.y || n.z > max.z) continue;
                 if (result.closed.Contains(n)) continue;
+                if (blockedByProps.Contains(n)) continue;
                 var nc = map.Get(n);
                 if (nc != null && nc.type != CellType.Win) continue;   // solid
 
