@@ -1,9 +1,55 @@
-unity/[Ll]ibrary/
-unity/[Tt]emp/
-unity/[Ll]ogs/
-unity/[Oo]bj/
-unity/[Bb]uild*/
-unity/[Uu]ser[Ss]ettings/
-unity/*.csproj
-unity/*.sln
+# Unity generated files
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Bb]uild/
+[Bb]uilds/
+[Uu]ser[Ss]ettings/
+*.csproj
+*.sln
+*.slnx
+
+# Separate Building Unity project
+Building/[Ll]ibrary/
+Building/[Tt]emp/
+Building/[Tt]logs/
+Building/[Ll]ogs/
+Building/[Oo]bj/
+Building/[Bb]uild*/
+Building/[Uu]ser[Ss]ettings/
+Building/*.csproj
+Building/*.sln
+Building/*.slnx
+Building/.vscode/
+
+# Editor and operating system files
+.vscode/
 .DS_Store
+
+# Python generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local generated files and databases
+drone_images/
+image_store/*.db
+image_store/*.sqlite
+image_store/*.sqlite3
+*.db
+*.sqlite
+*.sqlite3
+
+# Local secrets and environment configuration
+.env
+.env.*
+!.env.example
+
+# Downloaded model weights
+VisionServer/models/*.pt
+
+# Redundant exported Unity packages
+DroneGraphic*.unitypackage
+DroneGraphic-preview.png

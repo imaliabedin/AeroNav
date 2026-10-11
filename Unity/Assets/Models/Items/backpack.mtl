@@ -1,0 +1,20 @@
+newmtl backpack_DarkBrown
+Kd 0.0788 0.0435 0.0300
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl backpack_Brown
+Kd 0.1101 0.0600 0.0409
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl backpack_Gold
+Kd 0.4831 0.3762 0.0787
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1

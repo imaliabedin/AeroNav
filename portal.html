@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="portal.css">
   <link rel="stylesheet" href="builder.css">
+  <link rel="stylesheet" href="sonar.css">
   <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
 </head>
 <body>
@@ -19,13 +20,13 @@
   <header class="topnav">
     <a class="portal-logo" href="index.html"><b>✦</b> Sky<span>RL</span><small>FLIGHT LAB</small></a>
     <div class="navcenter"><i></i> WORKSPACE / 3D ENVIRONMENT</div>
-    <div><button id="lighting" class="tinybtn">☼</button><a href="index.html" class="back">← Main site</a></div>
+    <div><button id="lighting" class="tinybtn">☼</button><a href="city.html" class="back">Drone City ↗</a><a href="index.html" class="back">← Main site</a></div>
   </header>
   <main class="layout">
     <aside class="left">
       <label>MISSION CONTROL</label>
       <h1>Flight<br><span>workspace.</span></h1>
-      <p class="intro">Drag Unity props into the scene, arrange your environment, then export it for the Unity simulator.</p>
+      <p class="intro">Drag Unity props into the scene, then run a sonar flight: the drone finds every obstacle by its echoes and flies around it. Export the environment for the Unity simulator.</p>
       <hr>
       <label>SCENE CONTROLS</label>
       <button class="mode active" data-mode="orbit"><b>◉</b><span><strong>Orbital view</strong><small>Explore the environment</small></span><em>01</em></button>
@@ -51,15 +52,15 @@
       </section>
       <hr>
       <label>DEMO AGENT</label>
-      <div class="agent"><b>✦</b><span><strong>Drone-01</strong><small>Navigation agent <i id="agentStatus">● IDLE</i></small></span></div>
+      <div class="agent"><b>✦</b><span><strong>Drone-01</strong><small>Sonar navigation <i id="agentStatus">● IDLE</i></small></span></div>
       <div class="triplet">
-        <div><small>ALGORITHM</small><b>PPO</b></div>
-        <div><small>EPISODE</small><b id="episode">000</b></div>
-        <div><small>REWARD</small><b id="reward">—</b></div>
+        <div><small>NAVIGATION</small><b>SONAR</b></div>
+        <div><small>REPLANS</small><b id="replans">0</b></div>
+        <div><small>COLLISIONS</small><b id="collisions">0</b></div>
       </div>
-      <button class="run" id="run">▶ &nbsp; Run visual demo</button>
+      <button class="run" id="run">▶ &nbsp; Run sonar flight</button>
       <button class="reset" id="reset">Reset camera &amp; agent</button>
-      <p class="disclaimer">VISUAL DEMO ONLY · NO RL MODEL CONNECTED</p>
+      <p class="disclaimer">SONAR NAVIGATION · OBSTACLES FOUND ONLY BY SIMULATED ECHOES · NO RL MODEL</p>
     </aside>
     <section class="view">
       <div class="viewtop">
@@ -70,6 +71,21 @@
       <div class="axis"><span><i class="x"></i>X AXIS</span><span><i class="y"></i>Y AXIS</span><span><i class="z"></i>Z AXIS</span></div>
       <div class="target"><b>◎</b><span><small>MISSION TARGET</small><strong>Landing Zone A</strong></span><em>ACTIVE</em></div>
       <div class="tip">↗ Drag to orbit · Scroll to zoom · Drag props to move · Right-click to pan</div>
+      <div id="sonarBanner"></div>
+      <div class="sonar-hud" aria-live="polite">
+        <label>SONAR <em id="sonarQueries"></em></label>
+        <div class="row"><span>Last pulse</span><b id="sonarEchoes">—</b></div>
+        <div class="row"><span>Nearest echo</span><b id="sonarNearest">—</b></div>
+        <div class="row"><span>Believed obstacle cells</span><b id="sonarBelief">0</b></div>
+        <div class="row"><span>Replans · collisions</span><b><span id="sonarReplans">0</span> · <span id="sonarCollisions">0</span></b></div>
+        <div class="row"><span>Pulse compute</span><b id="sonarPulseMs">—</b></div>
+        <div class="sonar-tools">
+          <button id="sonarRays" class="tool">Rays</button><button id="sonarRings" class="tool">Rings</button>
+          <button id="sonarBeliefBtn" class="tool">Belief</button><button id="sonarFollow" class="tool">Follow</button>
+        </div>
+        <p>Rings are illustrative (sound slowed down). Only the sampled rays detect anything. <b class="o">Orange</b> = measured echoes,
+          <b class="r">red boxes</b> = what the drone believes, built from echoes — not the real map. <b class="y">Yellow</b> = its current route.</p>
+      </div>
       <div class="viewbottom">
         <div><small>COORDINATES</small><b id="coords">X 0.0 / Y 0.0 / Z 0.0</b></div>
         <div><small>CAMERA</small><b>ORBIT · PERSPECTIVE</b></div>
@@ -95,7 +111,7 @@
           <div><small>HEADING</small><b id="heading">090°</b></div>
           <div><small>BATTERY</small><b>98 <i>%</i></b></div>
         </div>
-        <p class="note">● Telemetry values are illustrative demo data</p>
+        <p class="note">● Altitude, velocity and heading come from the simulated sonar flight; battery is illustrative</p>
       </article>
       <article class="panel integrate">
         <label>UNITY INTEGRATION</label><div class="bigglyph">⌁</div>
@@ -108,5 +124,7 @@
   </main>
   <script src="portal.js"></script>
   <script src="builder.js"></script>
+  <script src="sonar-core.js"></script>
+  <script src="sonar.js"></script>
 </body>
 </html>

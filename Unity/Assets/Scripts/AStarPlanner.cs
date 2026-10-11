@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// 6-connected grid A* over the cell map. The drone has full knowledge of the world:
-/// walls and placed props are obstacles, and the target is the nearest win cube.
+/// 6-connected grid A* over the cell map. In Full-Knowledge mode the drone knows the whole world:
+/// walls and placed props are obstacles, and the target is the nearest win cube. In Sonar mode
+/// (an isBlocked callback is given) it knows only the goal and the outer bounds.
 public static class AStarPlanner
 {
     const float DroneClearance = 0.3f;
@@ -25,10 +26,15 @@ public static class AStarPlanner
         public float milliseconds;
     }
 
-    public static Result FindPath(CellMap map, Vector3Int start, int maxExpansions = 200000)
+    /// isBlocked == null: Full-Knowledge mode (walls and props come from the map).
+    /// isBlocked != null: Sonar mode. Only the goal (win cubes) is read from the map; obstacles are whatever
+    /// isBlocked reports (the sonar belief), unknown cells count as free, and the search stays inside `searchBounds`.
+    public static Result FindPath(CellMap map, Vector3Int start, int maxExpansions = 200000,
+                                  System.Func<Vector3Int, bool> isBlocked = null, BoundsInt? searchBounds = null)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
         var result = new Result();
+        bool sensed = isBlocked != null;
 
         var goals = new List<Vector3Int>();
         var propBounds = new List<Bounds>();
@@ -36,11 +42,12 @@ public static class AStarPlanner
         var max = start;
         foreach (var kv in map.Cells)
         {
+            if (kv.Value.type == CellType.Win) goals.Add(kv.Key);
+            if (sensed) continue;   // walls stay unknown in Sonar mode
             min = Vector3Int.Min(min, kv.Key);
             max = Vector3Int.Max(max, kv.Key);
-            if (kv.Value.type == CellType.Win) goals.Add(kv.Key);
         }
-        if (map.props != null)
+        if (!sensed && map.props != null)
         {
             foreach (var prop in map.props.GetComponentsInChildren<Prop>())
             {
@@ -61,6 +68,12 @@ public static class AStarPlanner
         min -= Vector3Int.one;
         max += Vector3Int.one;
         min.y = Mathf.Max(min.y, 0);
+        if (sensed && searchBounds.HasValue)
+        {
+            min = searchBounds.Value.min;
+            max = searchBounds.Value.max - Vector3Int.one;
+            min.y = Mathf.Max(min.y, 0);
+        }
 
         var blockedByProps = new HashSet<Vector3Int>();
         foreach (var bounds in propBounds)
@@ -97,8 +110,14 @@ public static class AStarPlanner
             result.closed.Add(cur);
             result.expanded++;
 
-            var cell = map.Get(cur);
-            if (cell != null && cell.type == CellType.Win)
+            bool atGoal;
+            if (sensed) atGoal = goals.Contains(cur);
+            else
+            {
+                var cell = map.Get(cur);
+                atGoal = cell != null && cell.type == CellType.Win;
+            }
+            if (atGoal)
             {
                 result.found = true;
                 result.goal = cur;
@@ -118,8 +137,15 @@ public static class AStarPlanner
                 if (n.x < min.x || n.y < min.y || n.z < min.z || n.x > max.x || n.y > max.y || n.z > max.z) continue;
                 if (result.closed.Contains(n)) continue;
                 if (blockedByProps.Contains(n)) continue;
-                var nc = map.Get(n);
-                if (nc != null && nc.type != CellType.Win) continue;   // solid
+                if (sensed)
+                {
+                    if (isBlocked(n)) continue;
+                }
+                else
+                {
+                    var nc = map.Get(n);
+                    if (nc != null && nc.type != CellType.Win) continue;   // solid
+                }
 
                 int ng = curG + 1;
                 if (g.TryGetValue(n, out int old) && old <= ng) continue;

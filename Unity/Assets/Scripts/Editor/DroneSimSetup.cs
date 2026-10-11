@@ -328,7 +328,7 @@ public static class DroneSimSetup
     }
 
     /// A collider-less box used for ground, sidewalks and paint (scenery, not part of the cell map).
-    static void Slab(Transform parent, string name, Material mat, Vector3 center, Vector3 size)
+    internal static void Slab(Transform parent, string name, Material mat, Vector3 center, Vector3 size)
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
         go.name = name;
@@ -391,7 +391,7 @@ public static class DroneSimSetup
 
     // ---------- materials ----------
 
-    static Material LitMaterial(string name, Color color, Color? emission = null)
+    internal static Material LitMaterial(string name, Color color, Color? emission = null)
     {
         var mat = GetOrCreate(name, "Universal Render Pipeline/Lit");
         mat.SetColor("_BaseColor", color);

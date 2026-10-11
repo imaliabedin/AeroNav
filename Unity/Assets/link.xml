@@ -1,0 +1,11 @@
+<!-- Player builds (WebGL) strip engine classes no scene uses. The sonar demo creates obstacles at run time
+     (GameObject.CreatePrimitive), so keep the colliders those need; without them the sonar and the
+     collision check could not detect the obstacles. -->
+<linker>
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all"/>
+    <type fullname="UnityEngine.BoxCollider" preserve="all"/>
+    <type fullname="UnityEngine.SphereCollider" preserve="all"/>
+    <type fullname="UnityEngine.MeshCollider" preserve="all"/>
+  </assembly>
+</linker>

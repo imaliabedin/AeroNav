@@ -1,0 +1,27 @@
+newmtl soda_greyDark
+Kd 0.2500 0.3300 0.4100
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl soda_greyLight
+Kd 0.6900 0.8000 0.9000
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl soda_red
+Kd 0.8100 0.0900 0.0800
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl soda_brownDarkest
+Kd 0.0500 0.0200 0.0100
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1

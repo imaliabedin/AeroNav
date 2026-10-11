@@ -209,7 +209,8 @@ public class MapBuilder : MonoBehaviour
 
     RaycastHit[] SortedHits(Ray ray)
     {
-        var hits = Physics.RaycastAll(ray, reach, ~(1 << 2), QueryTriggerInteraction.Collide);
+        // Not layer 2 (the drone) nor 1 (city buildings, see CityColliders): clicks go through them to the ground.
+        var hits = Physics.RaycastAll(ray, reach, ~((1 << 2) | (1 << 1)), QueryTriggerInteraction.Collide);
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
         return hits;
     }
@@ -255,6 +256,7 @@ public class MapBuilder : MonoBehaviour
 
     void OnGUI()
     {
+        if (SimulationManager.HideHud) { panelRect = Rect.zero; return; }   // the website shows its own tools
         if (label == null)
         {
             label = new GUIStyle(GUI.skin.label) { fontSize = 13, richText = true };

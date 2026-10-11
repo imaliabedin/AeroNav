@@ -1,0 +1,7 @@
+newmtl headphones_Material
+Kd 1.0000 1.0000 1.0000
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+map_Kd headphones_tex.png

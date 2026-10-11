@@ -1,0 +1,20 @@
+newmtl waterbottle_Plastic
+Kd 0.1762 0.3222 0.5106
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl waterbottle_Grey
+Kd 0.1139 0.1139 0.1139
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl waterbottle_Red
+Kd 0.1712 0.0316 0.0299
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1

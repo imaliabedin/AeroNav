@@ -7,3 +7,16 @@ Items/  phone  - "Phone" by Quaternius          https://poly.pizza/m/k2kgBepoMU 
 Items/  key    - "Key With Tag" by iPoly3D      https://poly.pizza/m/K6h20LmA1U  CC0
 Items/  pouch  - "Coin Pouch" by Quaternius     https://poly.pizza/m/pTZyPTMH88  CC0
 (Items were converted from the GLB files to OBJ+MTL so Unity imports them without extra packages.)
+Items/  laptop      - "Laptop" by Kenney             https://poly.pizza/m/GnbwSUiVty  CC0
+Items/  purse       - "Bag" by Quaternius            https://poly.pizza/m/Wq1JPPqHZS  CC0
+Items/  backpack    - "Backpack" by Quaternius       https://poly.pizza/m/vF7TuXCPDH  CC0
+Items/  headphones  - "Headphones" by CreativeTrio   https://poly.pizza/m/PSsWSIAYIL  CC0
+Items/  umbrella    - "Closed Umbrella" by CreativeTrio https://poly.pizza/m/o0CUgpt8pm  CC0
+Items/  waterbottle - "Water Bottle" by Quaternius   https://poly.pizza/m/KpxDpidn1Z  CC0
+Items/  soda        - "Soda Can" by Kenney           https://poly.pizza/m/KOLcdOATw6  CC0
+Items/  cup         - "Cup" by Kenney                https://poly.pizza/m/aSF8ANEIsX  CC0
+
+City backdrop (decorative only, built by Drone Sim/Build City Backdrop):
+City/Commercial/  shops, skyscrapers, low-detail buildings  - Kenney "City Kit Commercial" https://kenney.nl/assets/city-kit-commercial  CC0
+City/Suburban/    houses, fence, street trees               - Kenney "City Kit Suburban"   https://kenney.nl/assets/city-kit-suburban    CC0
+Nature/  extra trees, bushes, flowers, grass                - Kenney "Nature Kit"          https://kenney.nl/assets/nature-kit           CC0

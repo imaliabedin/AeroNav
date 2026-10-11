@@ -29,108 +29,10 @@
   let grid;
   let blocks;
   let controls;
-  let run = false;
   let frame = 0;
-  let demoPath = null;
-  let demoPathIndex = 0;
   let showGrid = true;
   let showBlocks = true;
   let light = false;
-
-  function planDemoPath() {
-    const xMin = -46, xMax = 46, yMin = 1, yMax = 18, zMin = -46, zMax = 46;
-    const ySize = yMax - yMin + 1, zSize = zMax - zMin + 1;
-    const total = (xMax - xMin + 1) * ySize * zSize;
-    const encode = (x, y, z) => ((x - xMin) * ySize + (y - yMin)) * zSize + (z - zMin);
-    const decode = id => {
-      const z = id % zSize + zMin;
-      const rest = (id - (z - zMin)) / zSize;
-      const y = rest % ySize + yMin;
-      const x = Math.floor(rest / ySize) + xMin;
-      return [x, y, z];
-    };
-    const blocked = new Uint8Array(total);
-    for (const [x, z, width, depth, height] of obstacleLayout) {
-      const minX = Math.max(xMin, Math.ceil(x - width / 2 - 3.4));
-      const maxX = Math.min(xMax, Math.floor(x + width / 2 + 3.4));
-      const minY = Math.max(yMin, Math.ceil(-0.45 - 0.75));
-      const maxY = Math.min(yMax, Math.floor(height - 0.45 + 0.75));
-      const minZ = Math.max(zMin, Math.ceil(z - depth / 2 - 3.4));
-      const maxZ = Math.min(zMax, Math.floor(z + depth / 2 + 3.4));
-      for (let ox = minX; ox <= maxX; ox++)
-        for (let oy = minY; oy <= maxY; oy++)
-          for (let oz = minZ; oz <= maxZ; oz++)
-            blocked[encode(ox, oy, oz)] = 1;
-    }
-
-    const start = [-38, 8, 35], goal = [34, 1, 31];
-    const startId = encode(...start), goalId = encode(...goal);
-    if (blocked[startId] || blocked[goalId]) return null;
-
-    const scores = new Float32Array(total);
-    scores.fill(Infinity);
-    const previous = new Int32Array(total);
-    previous.fill(-1);
-    const closed = new Uint8Array(total);
-    const open = [];
-    const heuristic = (x, y, z) => Math.abs(x - goal[0]) + Math.abs(y - goal[1]) + Math.abs(z - goal[2]);
-    const push = (id, g, f) => {
-      let i = open.length;
-      open.push({ id, g, f });
-      while (i > 0) {
-        const parent = (i - 1) >> 1;
-        if (open[parent].f < f || (open[parent].f === f && open[parent].g >= g)) break;
-        open[i] = open[parent];
-        i = parent;
-      }
-      open[i] = { id, g, f };
-    };
-    const pop = () => {
-      const first = open[0], last = open.pop();
-      if (open.length) {
-        let i = 0;
-        while (true) {
-          const left = i * 2 + 1, right = left + 1;
-          if (left >= open.length) break;
-          let child = left;
-          if (right < open.length && (open[right].f < open[left].f ||
-              (open[right].f === open[left].f && open[right].g > open[left].g))) child = right;
-          if (open[child].f > last.f || (open[child].f === last.f && open[child].g <= last.g)) break;
-          open[i] = open[child];
-          i = child;
-        }
-        open[i] = last;
-      }
-      return first;
-    };
-
-    scores[startId] = 0;
-    push(startId, 0, heuristic(...start));
-    const directions = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
-    while (open.length) {
-      const current = pop();
-      if (closed[current.id] || current.g !== scores[current.id]) continue;
-      if (current.id === goalId) {
-        const path = [];
-        for (let id = goalId; id !== -1; id = previous[id]) path.push(decode(id));
-        return path.reverse();
-      }
-      closed[current.id] = 1;
-      const [x, y, z] = decode(current.id);
-      for (const [dx, dy, dz] of directions) {
-        const nx = x + dx, ny = y + dy, nz = z + dz;
-        if (nx < xMin || nx > xMax || ny < yMin || ny > yMax || nz < zMin || nz > zMax) continue;
-        const next = encode(nx, ny, nz);
-        if (blocked[next] || closed[next]) continue;
-        const g = current.g + 1;
-        if (g >= scores[next]) continue;
-        scores[next] = g;
-        previous[next] = current.id;
-        push(next, g, g + heuristic(nx, ny, nz));
-      }
-    }
-    return null;
-  }
 
   function init() {
     if (!window.THREE) {
@@ -299,7 +201,7 @@
         renderer.setSize(mount.clientWidth, mount.clientHeight);
       });
       cameraUpdate();
-      window.skyrlWorld = { scene, camera, renderer, controls, obstacleLayout, groundY: -0.5, get demoPath() { return demoPath; } };
+      window.skyrlWorld = { scene, camera, renderer, controls, obstacleLayout, groundY: -0.5, drone, blocks, cameraUpdate };
       animate();
     } catch (error) {
       fallback.style.display = 'grid';
@@ -327,32 +229,8 @@
     previousFrameTime = timestamp;
     frame++;
     if (drone) {
-      if (run) {
-        let distance = 4 * deltaTime;
-        while (distance > 0 && demoPathIndex < demoPath.length - 1) {
-          const target = new THREE.Vector3(...demoPath[demoPathIndex + 1]);
-          const remaining = drone.position.distanceTo(target);
-          const step = Math.min(distance, remaining);
-          drone.position.lerp(target, remaining > 0 ? step / remaining : 1);
-          distance -= step;
-          if (step >= remaining) demoPathIndex++;
-        }
-        document.getElementById('coords').textContent =
-          `X ${drone.position.x.toFixed(1)} / Y ${drone.position.y.toFixed(1)} / Z ${drone.position.z.toFixed(1)}`;
-        document.getElementById('altitude').innerHTML = `${drone.position.y.toFixed(1)} <i>m</i>`;
-        document.getElementById('velocity').innerHTML = '4.0 <i>m/s</i>';
-        if (demoPathIndex < demoPath.length - 1) {
-          const [x, , z] = demoPath[demoPathIndex + 1];
-          document.getElementById('heading').textContent =
-            `${String((Math.atan2(x - drone.position.x, z - drone.position.z) * 180 / Math.PI + 360) % 360 | 0).padStart(3, '0')}°`;
-        }
-        if (demoPathIndex >= demoPath.length - 1) {
-          run = false;
-          document.getElementById('run').textContent = '▶  Run visual demo';
-          document.getElementById('agentStatus').textContent = '● LANDED';
-          document.getElementById('reward').textContent = '+92';
-        }
-      } else {
+      if (window.SkyrlSonar) window.SkyrlSonar.update(deltaTime);   // sonar navigation (sonar.js)
+      else {
         drone.position.y = 8 + Math.sin(frame * 0.025) * 0.35;
         drone.rotation.y += 0.001;
       }
@@ -394,43 +272,17 @@
     document.querySelector('.axis').style.opacity = active ? '1' : '0';
   });
   document.getElementById('run').addEventListener('click', () => {
-    if (!drone) {
+    if (!drone || !window.SkyrlSonar) {
       alert('3D scene did not load. Check your connection and reload.');
       return;
     }
-    run = !run;
-    if (run) {
-      demoPath = planDemoPath();
-      if (!demoPath) {
-        run = false;
-        document.getElementById('agentStatus').textContent = '● NO SAFE ROUTE';
-        console.error('Drone demo could not find a collision-free route.');
-        return;
-      }
-      frame = 0;
-      demoPathIndex = 0;
-      drone.position.set(-38, 8, 35);
-      document.getElementById('episode').textContent = '001';
-      document.getElementById('reward').textContent = '…';
-      document.getElementById('run').textContent = 'Ⅱ  Pause demo';
-      document.getElementById('agentStatus').textContent = '● RUNNING';
-    } else {
-      document.getElementById('run').textContent = '▶  Run visual demo';
-      document.getElementById('agentStatus').textContent = '● PAUSED';
-      document.getElementById('velocity').innerHTML = '0.0 <i>m/s</i>';
-    }
+    window.SkyrlSonar.toggleRun();
   });
   document.getElementById('reset').addEventListener('click', () => {
-    run = false;
     frame = 0;
-    if (drone) {
-      drone.position.set(-38, 8, 35);
-      drone.rotation.set(0, 0, 0);
-    }
-    document.getElementById('run').textContent = '▶  Run visual demo';
+    if (window.SkyrlSonar) window.SkyrlSonar.reset();
+    document.getElementById('run').textContent = '▶  Run sonar flight';
     document.getElementById('agentStatus').textContent = '● IDLE';
-    document.getElementById('episode').textContent = '000';
-    document.getElementById('reward').textContent = '—';
     document.getElementById('altitude').innerHTML = '12.0 <i>m</i>';
     document.getElementById('velocity').innerHTML = '0.0 <i>m/s</i>';
     document.getElementById('heading').textContent = '090°';

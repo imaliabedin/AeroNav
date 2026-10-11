@@ -65,3 +65,35 @@ MonoBehaviour:
     prefab: {fileID: 919132149155446097, guid: 1f608046dd3a476439269f5c5cbd61f6, type: 3}
     size: 0.18
     modelRotation: {x: 0, y: 0, z: 0}
+  - name: Laptop
+    prefab: {fileID: 919132149155446097, guid: 32dd564339b96704bb40eb033e768150, type: 3}
+    size: 0.34
+    modelRotation: {x: 0, y: 0, z: 0}
+  - name: Purse
+    prefab: {fileID: 919132149155446097, guid: 06890ad6eb25b3345abed211e1506b2e, type: 3}
+    size: 0.32
+    modelRotation: {x: 0, y: 0, z: 0}
+  - name: Backpack
+    prefab: {fileID: 919132149155446097, guid: 04128d6745bb76a45b3706b01dce6d25, type: 3}
+    size: 0.45
+    modelRotation: {x: 0, y: 0, z: 0}
+  - name: Headphones
+    prefab: {fileID: 919132149155446097, guid: 94aa02e654279b143b6674ea6dcc18f7, type: 3}
+    size: 0.18
+    modelRotation: {x: 90, y: 0, z: 0}
+  - name: Umbrella
+    prefab: {fileID: 919132149155446097, guid: 66476015f74429344a88ec5c8a563592, type: 3}
+    size: 0.9
+    modelRotation: {x: 90, y: 0, z: 0}
+  - name: Water bottle
+    prefab: {fileID: 919132149155446097, guid: f00e3a14fabf38148a4d1324cbf5a5f4, type: 3}
+    size: 0.25
+    modelRotation: {x: 0, y: 0, z: 0}
+  - name: Soda can
+    prefab: {fileID: 919132149155446097, guid: 2550399fd85e731448dfb26566498480, type: 3}
+    size: 0.12
+    modelRotation: {x: 0, y: 0, z: 0}
+  - name: Coffee cup
+    prefab: {fileID: 919132149155446097, guid: e8db8100b33191f41aa7f1ef5cc49d75, type: 3}
+    size: 0.1
+    modelRotation: {x: 0, y: 0, z: 0}

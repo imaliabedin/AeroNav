@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SkyRL — Drone City</title>
+  <style>
+    * { box-sizing: border-box }
+    body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: #0b0f18; color: #e6edf7; font: 14px/1.4 system-ui, -apple-system, sans-serif }
+    header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #222b3a }
+    header a { color: #e6edf7; text-decoration: none; font-weight: 800; margin-right: 10px }
+    button { font: inherit; padding: 8px 12px; border-radius: 7px; border: 1px solid #2b3850; background: #141c2b; color: #e6edf7; cursor: pointer }
+    button:hover { border-color: #477dff }
+    button.on { background: #1d3366; border-color: #477dff }
+    #run { background: #2f9e5f; border-color: #2f9e5f; font-weight: 700 }
+    #stop { background: #7a2b2b; border-color: #7a2b2b }
+    .sep { width: 1px; height: 26px; background: #2b3850; margin: 0 4px }
+    #hint { color: #93a1b8; font-size: 13px; padding: 6px 14px; border-bottom: 1px solid #222b3a }
+    main { position: relative; flex: 1 }
+    canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none }
+    #load { position: absolute; inset: 0; display: grid; place-items: center; background: #0b0f18; color: #93a1b8 }
+    #load.done { display: none }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html">✦ SkyRL</a>
+    <button id="run">▶ Run drone</button>
+    <button id="stop">■ Stop</button>
+    <span class="sep"></span>
+    <button data-tool="goal">◎ Place target</button>
+    <button data-tool="start">✈ Set start</button>
+    <button data-tool="wall">▦ Wall</button>
+    <button data-tool="Street light">Street light</button>
+    <button data-tool="Round tree">Tree</button>
+    <button data-tool="Van">Van</button>
+    <button data-tool="Traffic cone">Cone</button>
+    <span class="sep"></span>
+    <button id="surprise">Add surprise obstacles</button>
+    <button id="clear">Clear obstacles</button>
+  </header>
+  <div id="hint">Pick a tool, then click anywhere in the city to place it (Ctrl+click removes). ▶ Run: the drone takes off, flies at 8–10 ft using only sonar, and lands on the target. Hold right mouse + WASD to move the camera.</div>
+  <main>
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="load">Loading Drone City… <span id="pct">0%</span></div>
+  </main>
+  <script src="drone-city/Build/drone-city.loader.js"></script>
+  <script>
+    const canvas = document.getElementById('unity-canvas');
+    const send = (method, arg) => window.city && (arg === undefined ? city.SendMessage('WebControls', method) : city.SendMessage('WebControls', method, arg));
+    const hint = document.getElementById('hint');
+    const tools = document.querySelectorAll('[data-tool]');
+
+    document.getElementById('run').onclick = () => { send('Run'); tools.forEach(t => t.classList.remove('on')); hint.textContent = 'Flying. Grey lines are sonar rays, red boxes are obstacles the drone has heard, yellow is its route.'; };
+    document.getElementById('stop').onclick = () => { send('Stop'); hint.textContent = 'Stopped. Pick a tool and click on the lot, or press ▶ Run.'; };
+    document.getElementById('clear').onclick = () => send('Clear');
+    document.getElementById('surprise').onclick = () => send('Surprise');
+    tools.forEach(b => b.onclick = () => {
+      send('Tool', b.dataset.tool);
+      tools.forEach(t => t.classList.toggle('on', t === b));
+      hint.textContent = b.dataset.tool === 'goal' ? 'Click where the drone should land, anywhere in the city (it snaps to the nearest open ground).'
+        : b.dataset.tool === 'start' ? 'Click where the drone should take off from (it snaps to the nearest open ground).'
+        : `Click to place: ${b.textContent}. Ctrl+click removes.`;
+      canvas.focus();
+    });
+
+    createUnityInstance(canvas, {
+      dataUrl: 'drone-city/Build/drone-city.data',
+      frameworkUrl: 'drone-city/Build/drone-city.framework.js',
+      codeUrl: 'drone-city/Build/drone-city.wasm',
+      companyName: 'SkyRL', productName: 'Drone City', productVersion: '1.0',
+      matchWebGLToCanvasSize: true,
+    }, p => document.getElementById('pct').textContent = Math.round(p * 100) + '%')
+      .then(instance => { window.city = instance; document.getElementById('load').classList.add('done'); })
+      .catch(e => document.getElementById('load').textContent = 'Could not start the simulation: ' + e);
+  </script>
+</body>
+</html>

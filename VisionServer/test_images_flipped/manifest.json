@@ -1,0 +1,412 @@
+{
+    "shots": [
+        {
+            "file": "a244_key01_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "key",
+            "kind": "center"
+        },
+        {
+            "file": "a244_key01_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "key",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_key02_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "key",
+            "kind": "center"
+        },
+        {
+            "file": "a244_key02_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "key",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_key03_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "key",
+            "kind": "center"
+        },
+        {
+            "file": "a244_key03_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "key",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_phone04_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a244_phone04_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_phone05_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a244_phone05_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_phone06_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a244_phone06_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_phone07_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a244_phone07_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_phone08_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a244_phone08_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_wallet09_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "wallet",
+            "kind": "center"
+        },
+        {
+            "file": "a244_wallet09_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "wallet",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_wallet10_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "wallet",
+            "kind": "center"
+        },
+        {
+            "file": "a244_wallet10_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "wallet",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_wallet11_center.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "wallet",
+            "kind": "center"
+        },
+        {
+            "file": "a244_wallet11_edge.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "wallet",
+            "kind": "edge"
+        },
+        {
+            "file": "a244_none01_near_car.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a244_none02_open.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a244_none03_near_car.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a244_none04_open.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a244_none05_near_car.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a244_none06_open.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a244_none07_near_car.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a244_none08_open.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a244_none09_near_car.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a244_none10_open.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a244_none11_near_car.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a244_none12_open.jpg",
+            "altitude": 2.440000057220459,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a150_key01_center.jpg",
+            "altitude": 1.5,
+            "truth": "key",
+            "kind": "center"
+        },
+        {
+            "file": "a150_key01_edge.jpg",
+            "altitude": 1.5,
+            "truth": "key",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_key02_center.jpg",
+            "altitude": 1.5,
+            "truth": "key",
+            "kind": "center"
+        },
+        {
+            "file": "a150_key02_edge.jpg",
+            "altitude": 1.5,
+            "truth": "key",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_key03_center.jpg",
+            "altitude": 1.5,
+            "truth": "key",
+            "kind": "center"
+        },
+        {
+            "file": "a150_key03_edge.jpg",
+            "altitude": 1.5,
+            "truth": "key",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_phone04_center.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a150_phone04_edge.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_phone05_center.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a150_phone05_edge.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_phone06_center.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a150_phone06_edge.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_phone07_center.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a150_phone07_edge.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_phone08_center.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "center"
+        },
+        {
+            "file": "a150_phone08_edge.jpg",
+            "altitude": 1.5,
+            "truth": "phone",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_wallet09_center.jpg",
+            "altitude": 1.5,
+            "truth": "wallet",
+            "kind": "center"
+        },
+        {
+            "file": "a150_wallet09_edge.jpg",
+            "altitude": 1.5,
+            "truth": "wallet",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_wallet10_center.jpg",
+            "altitude": 1.5,
+            "truth": "wallet",
+            "kind": "center"
+        },
+        {
+            "file": "a150_wallet10_edge.jpg",
+            "altitude": 1.5,
+            "truth": "wallet",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_wallet11_center.jpg",
+            "altitude": 1.5,
+            "truth": "wallet",
+            "kind": "center"
+        },
+        {
+            "file": "a150_wallet11_edge.jpg",
+            "altitude": 1.5,
+            "truth": "wallet",
+            "kind": "edge"
+        },
+        {
+            "file": "a150_none01_near_car.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a150_none02_open.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a150_none03_near_car.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a150_none04_open.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a150_none05_near_car.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a150_none06_open.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a150_none07_near_car.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a150_none08_open.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a150_none09_near_car.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a150_none10_open.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "open"
+        },
+        {
+            "file": "a150_none11_near_car.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "near_car"
+        },
+        {
+            "file": "a150_none12_open.jpg",
+            "altitude": 1.5,
+            "truth": "none",
+            "kind": "open"
+        }
+    ]
+}

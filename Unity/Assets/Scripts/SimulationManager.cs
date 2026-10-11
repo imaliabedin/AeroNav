@@ -12,6 +12,10 @@ public class SimulationManager : MonoBehaviour
     public CellMap map;
     public MapBuilder builder;
     public FlyCamera flyCamera;
+    /// Optional vision layer (added at play time by VisionBootstrap if not in the scene).
+    public TargetDetector detector;
+    /// Hide the text HUD (the website draws its own buttons); the result banner still shows.
+    public static bool HideHud;
 
     public SimMode Mode { get; private set; } = SimMode.Build;
     public bool Paused { get; private set; }
@@ -142,6 +146,7 @@ public class SimulationManager : MonoBehaviour
                 ? $"A*: path {drone.PathSteps} cells   expanded {plan.expanded} nodes   {plan.milliseconds:0.00} ms"
                 : $"A*: no path ({plan.failReason})   expanded {plan.expanded} nodes");
         sb.AppendLine();
+        if (detector) sb.AppendLine(detector.HudLine());
         sb.AppendLine();
 
         if (Mode == SimMode.Build)
@@ -160,14 +165,18 @@ public class SimulationManager : MonoBehaviour
 
         string hud = $"<color=#F0F0F0>{sb}</color>";
         var panel = new Rect(10, 10, 660, text.CalcHeight(new GUIContent(hud), 644f) + 14f);
-        HudRect = panel;
-        var prev = GUI.color;
-        GUI.color = new Color(0f, 0f, 0f, 0.65f);
-        GUI.DrawTexture(panel, Texture2D.whiteTexture);
-        GUI.color = prev;
-        GUI.Label(new Rect(panel.x + 8, panel.y + 6, panel.width - 16, panel.height - 12), hud, text);
+        HudRect = HideHud ? Rect.zero : panel;
+        if (!HideHud)
+        {
+            var prev = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.65f);
+            GUI.DrawTexture(panel, Texture2D.whiteTexture);
+            GUI.color = prev;
+            GUI.Label(new Rect(panel.x + 8, panel.y + 6, panel.width - 16, panel.height - 12), hud, text);
+        }
 
-        string banner = Mode == SimMode.Won ? "<color=#3CFF5A>GOAL REACHED</color>"
+        string banner = detector && detector.Banner() != null ? detector.Banner()
+                      : Mode == SimMode.Won ? "<color=#3CFF5A>GOAL REACHED</color>"
                       : Mode == SimMode.GaveUp ? $"<color=#FF5050>NO PATH ({plan?.failReason})</color>"
                       : null;
         if (banner != null)

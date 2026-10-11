@@ -1,0 +1,20 @@
+newmtl laptop_metalDark
+Kd 0.0700 0.1200 0.1200
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl laptop_metal
+Kd 0.5200 0.6500 0.6800
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl laptop_metalMedium
+Kd 0.1100 0.1900 0.1900
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
