@@ -62,7 +62,7 @@ MonoBehaviour:
     size: 0.12
     modelRotation: {x: 90, y: 0, z: 0}
   - name: Wallet
-    prefab: {fileID: 919132149155446097, guid: 1f608046dd3a476439269f5c5cbd61f6, type: 3}
+    prefab: {fileID: 919132149155446097, guid: d9c9767cd6e848dbbb2f26478f5b7e6a, type: 3}
     size: 0.18
     modelRotation: {x: 0, y: 0, z: 0}
   - name: Laptop

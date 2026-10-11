@@ -5,7 +5,7 @@ using UnityEngine;
 /// Web build only: the controls behind the website's buttons (city.html calls these through
 /// unityInstance.SendMessage("WebControls", ...)). Vision is switched off (it needs the local Python
 /// server); the drone navigates by sonar only. Commands: Run, Stop, Tool(goal|wall|start|<object name>),
-/// Clear, Surprise. Placing a new goal replaces the old one. In the Editor it only runs if WEB_AUTOPILOT=1.
+/// Clear, Surprise. The area scan has its own receiver, "ScanControls" (ScanMission). Placing a new goal replaces the old one. In the Editor it only runs if WEB_AUTOPILOT=1.
 public class WebAutopilot : MonoBehaviour
 {
     SimulationManager sim;
@@ -16,6 +16,7 @@ public class WebAutopilot : MonoBehaviour
     SimulationManager.SimMode lastMode;
     Vector3Int lastStart;
     bool ready;
+    ScanMission scan;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Attach()
@@ -63,6 +64,7 @@ public class WebAutopilot : MonoBehaviour
         lastStart = sim.map.droneStart;
         lastMode = sim.Mode;
         sim.ResetCamera();
+        scan = ScanMission.Attach(sim);   // area search: the website's region / object / scan controls
         ready = true;
     }
 
@@ -131,13 +133,22 @@ public class WebAutopilot : MonoBehaviour
 
     public void Run()
     {
-        if (!ready) return;
+        if (!ready || (scan && scan.Busy)) return;
         if (sim.Mode != SimulationManager.SimMode.Build) sim.EnterBuildMode();
         sim.StartSim();
     }
 
+    /// Simulation speed multiplier ("1" or "5"): drone, scan, traffic, sonar and the run timer all follow
+    /// Time.timeScale; the camera runs on real time.
+    public void SetTimeScale(string value)
+    {
+        if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float k))
+            Time.timeScale = Mathf.Clamp(k, 0.1f, 10f);
+    }
+
     public void Stop()
     {
+        if (scan && scan.Busy) scan.StopScan();
         if (ready) sim.EnterBuildMode();
     }
 
@@ -145,7 +156,9 @@ public class WebAutopilot : MonoBehaviour
     public void Tool(string name)
     {
         if (!ready || !sim.builder) return;
+        if (scan && scan.Busy) return;
         if (sim.Mode != SimulationManager.SimMode.Build) sim.EnterBuildMode();
+        if (scan) scan.Release();         // the build tools take the clicks again
         var b = sim.builder;
         switch (name)
         {

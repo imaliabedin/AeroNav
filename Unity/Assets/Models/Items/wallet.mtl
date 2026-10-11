@@ -1,0 +1,41 @@
+newmtl wallet_Leather
+Kd 0.0600 0.0380 0.0280
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl wallet_Fold
+Kd 0.0320 0.0210 0.0160
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl wallet_Stitch
+Kd 0.6200 0.5000 0.3300
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl wallet_CardBlue
+Kd 0.0600 0.2000 0.5500
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl wallet_CardSilver
+Kd 0.6200 0.6300 0.6000
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl wallet_Metal
+Kd 0.5500 0.5500 0.5700
+Ka 0 0 0
+Ks 0 0 0
+d 1
+illum 1

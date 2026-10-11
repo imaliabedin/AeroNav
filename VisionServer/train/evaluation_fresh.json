@@ -1,0 +1,258 @@
+{
+  "weights": "/Users/kavithakesavalu/DroneScanner_work/HackPHS2026-main/VisionServer/models/drone_items.pt",
+  "test": "datasets/drone5/raw/fresh",
+  "heldOut": {
+    "1280": {
+      "0.05": {
+        "recall": {
+          "wallet": 1.0,
+          "keys": 1.0,
+          "phone": 0.983739837398374,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.995334370139969,
+        "falseAlarmsPerFrame": 0.14666666666666667,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      },
+      "0.1": {
+        "recall": {
+          "wallet": 1.0,
+          "keys": 1.0,
+          "phone": 0.983739837398374,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.995334370139969,
+        "falseAlarmsPerFrame": 0.11333333333333333,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      },
+      "0.25": {
+        "recall": {
+          "wallet": 1.0,
+          "keys": 1.0,
+          "phone": 0.983739837398374,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.995334370139969,
+        "falseAlarmsPerFrame": 0.07166666666666667,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      },
+      "0.5": {
+        "recall": {
+          "wallet": 1.0,
+          "keys": 1.0,
+          "phone": 0.975609756097561,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.9937791601866252,
+        "falseAlarmsPerFrame": 0.03666666666666667,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      }
+    },
+    "640": {
+      "0.05": {
+        "recall": {
+          "wallet": 1.0,
+          "keys": 0.991304347826087,
+          "phone": 0.967479674796748,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.9922239502332815,
+        "falseAlarmsPerFrame": 0.13666666666666666,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      },
+      "0.1": {
+        "recall": {
+          "wallet": 1.0,
+          "keys": 0.991304347826087,
+          "phone": 0.967479674796748,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.9922239502332815,
+        "falseAlarmsPerFrame": 0.09333333333333334,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      },
+      "0.25": {
+        "recall": {
+          "wallet": 1.0,
+          "keys": 0.9652173913043478,
+          "phone": 0.967479674796748,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.9860031104199067,
+        "falseAlarmsPerFrame": 0.04,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      },
+      "0.5": {
+        "recall": {
+          "wallet": 1.0,
+          "keys": 0.9478260869565217,
+          "phone": 0.967479674796748,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.9828926905132193,
+        "falseAlarmsPerFrame": 0.02,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      }
+    },
+    "640@1280": {
+      "0.05": {
+        "recall": {
+          "wallet": 0.9925373134328358,
+          "keys": 0.9478260869565217,
+          "phone": 0.975609756097561,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.9844479004665629,
+        "falseAlarmsPerFrame": 0.10333333333333333,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      },
+      "0.1": {
+        "recall": {
+          "wallet": 0.9925373134328358,
+          "keys": 0.9391304347826087,
+          "phone": 0.975609756097561,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.9813374805598756,
+        "falseAlarmsPerFrame": 0.075,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      },
+      "0.25": {
+        "recall": {
+          "wallet": 0.9888059701492538,
+          "keys": 0.9130434782608695,
+          "phone": 0.975609756097561,
+          "purse": 0.9927007299270073
+        },
+        "recallAnyClass": 0.973561430793157,
+        "falseAlarmsPerFrame": 0.06,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      },
+      "0.5": {
+        "recall": {
+          "wallet": 0.9813432835820896,
+          "keys": 0.8956521739130435,
+          "phone": 0.967479674796748,
+          "purse": 0.9854014598540146
+        },
+        "recallAnyClass": 0.9642301710730948,
+        "falseAlarmsPerFrame": 0.03166666666666667,
+        "objects": {
+          "wallet": 268,
+          "keys": 115,
+          "phone": 123,
+          "purse": 137
+        }
+      }
+    }
+  },
+  "originalTests": {
+    "test_images": {
+      "0.05": {
+        "found": 32,
+        "positives": 44,
+        "falseAlarmFrames": 1,
+        "negatives": 24
+      },
+      "0.1": {
+        "found": 31,
+        "positives": 44,
+        "falseAlarmFrames": 1,
+        "negatives": 24
+      },
+      "0.25": {
+        "found": 28,
+        "positives": 44,
+        "falseAlarmFrames": 0,
+        "negatives": 24
+      },
+      "0.5": {
+        "found": 20,
+        "positives": 44,
+        "falseAlarmFrames": 0,
+        "negatives": 24
+      }
+    },
+    "test_images_flipped": {
+      "0.05": {
+        "found": 20,
+        "positives": 44,
+        "falseAlarmFrames": 2,
+        "negatives": 24
+      },
+      "0.1": {
+        "found": 17,
+        "positives": 44,
+        "falseAlarmFrames": 2,
+        "negatives": 24
+      },
+      "0.25": {
+        "found": 15,
+        "positives": 44,
+        "falseAlarmFrames": 0,
+        "negatives": 24
+      },
+      "0.5": {
+        "found": 12,
+        "positives": 44,
+        "falseAlarmFrames": 0,
+        "negatives": 24
+      }
+    }
+  }
+}

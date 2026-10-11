@@ -3,23 +3,43 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SkyRL — autonomous search drone</title>
+  <title>AeroNav — autonomous search drone</title>
   <style>
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0b0f18; color: #e6edf7; font: 17px/1.6 system-ui, -apple-system, sans-serif }
     main { max-width: 640px; padding: 32px }
     h1 { font-size: 44px; line-height: 1.1; margin: 0 0 16px }
     h1 span { color: #6d96ff }
     p { color: #a5b0c2 }
-    a.launch { display: inline-block; margin-top: 18px; padding: 14px 26px; border-radius: 10px; background: #477dff; color: white; font-weight: 700; text-decoration: none }
+    .launch-wrap { position: relative; display: inline-block; margin-top: 18px }
+    button.launch { font: inherit; padding: 14px 26px; border-radius: 10px; border: 0; background: #477dff; color: white; font-weight: 700; cursor: pointer }
+    button.launch::after { content: " ▾"; font-size: 14px }
+    .menu { position: absolute; left: 0; top: calc(100% + 6px); min-width: 100%; background: #141c2b; border: 1px solid #2b3850; border-radius: 10px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.4); z-index: 1 }
+    .menu[hidden] { display: none }
+    .menu a { display: block; padding: 10px 14px; border-radius: 7px; color: #e6edf7; text-decoration: none; font-weight: 600; white-space: nowrap }
+    .menu a small { display: block; font-weight: 400; color: #93a1b8; font-size: 13px }
+    .menu a:hover, .menu a:focus { background: #1d3366; outline: none }
   </style>
 </head>
 <body>
   <main>
-    <h1>SkyRL<br><span>autonomous search drone</span></h1>
+    <h1>AeroNav<br><span>autonomous search drone</span></h1>
     <p>A drone that flies through a city on its own to find lost things, such as keys or a phone.</p>
     <p>It is not given a map of the obstacles. It sends out sonar pulses, listens for the echoes, builds its own picture of
       what is in the way, and re-plans its route whenever it hears something new. You choose the target and add obstacles; it finds the way.</p>
-    <a class="launch" href="city.html">Launch SkyRL</a>
+    <div class="launch-wrap">
+      <button class="launch" id="launch" aria-haspopup="true" aria-expanded="false" aria-controls="launchMenu">Launch Drone</button>
+      <div class="menu" id="launchMenu" role="menu" hidden>
+        <a role="menuitem" href="city.html">Object Finder<small>Search a city area for a lost item</small></a>
+        <a role="menuitem" href="rescue.html">Rescue Mission<small>Two drones search a burning building</small></a>
+      </div>
+    </div>
   </main>
+  <script>
+    const btn = document.getElementById('launch'), menu = document.getElementById('launchMenu');
+    const show = open => { menu.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) menu.querySelector('a').focus(); };
+    btn.onclick = e => { e.stopPropagation(); show(menu.hidden); };
+    document.addEventListener('click', e => { if (!menu.contains(e.target)) show(false); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { show(false); btn.focus(); } });
+  </script>
 </body>
 </html>

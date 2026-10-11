@@ -1,0 +1,86 @@
+{
+  "models/drone_items_v1.pt": {
+    "new wallet, phones screen-down": {
+      "wallet": "4.9%",
+      "keys": "100.0%",
+      "phone": "97.6%",
+      "purse": "99.3%",
+      "wrong/frame": "0.07"
+    },
+    "new wallet, phones both ways": {
+      "wallet": "9.0%",
+      "keys": "100.0%",
+      "phone": "92.0%",
+      "purse": "100.0%",
+      "wrong/frame": "0.06"
+    },
+    "original test_images (phones screen-down)": {
+      "keys": "12/12",
+      "phone": "20/20",
+      "wallet": "12/12",
+      "empty-frame alarms": "1/24"
+    },
+    "original test_images_flipped (phones screen-up)": {
+      "keys": "12/12",
+      "phone": "20/20",
+      "wallet": "12/12",
+      "empty-frame alarms": "0/24"
+    }
+  },
+  "models/drone_items_v2.pt": {
+    "new wallet, phones screen-down": {
+      "wallet": "100.0%",
+      "keys": "96.5%",
+      "phone": "96.7%",
+      "purse": "99.3%",
+      "wrong/frame": "0.04"
+    },
+    "new wallet, phones both ways": {
+      "wallet": "100.0%",
+      "keys": "98.8%",
+      "phone": "57.3%",
+      "purse": "100.0%",
+      "wrong/frame": "0.04"
+    },
+    "original test_images (phones screen-down)": {
+      "keys": "12/12",
+      "phone": "20/20",
+      "wallet": "0/12",
+      "empty-frame alarms": "0/24"
+    },
+    "original test_images_flipped (phones screen-up)": {
+      "keys": "12/12",
+      "phone": "0/20",
+      "wallet": "1/12",
+      "empty-frame alarms": "0/24"
+    }
+  },
+  "models/drone_items.pt": {
+    "new wallet, phones screen-down": {
+      "wallet": "100.0%",
+      "keys": "100.0%",
+      "phone": "96.7%",
+      "purse": "100.0%",
+      "wrong/frame": "0.04"
+    },
+    "new wallet, phones both ways": {
+      "wallet": "100.0%",
+      "keys": "100.0%",
+      "phone": "98.0%",
+      "purse": "100.0%",
+      "wrong/frame": "0.05"
+    },
+    "original test_images (phones screen-down)": {
+      "keys": "12/12",
+      "phone": "20/20",
+      "wallet": "0/12",
+      "empty-frame alarms": "0/24"
+    },
+    "original test_images_flipped (phones screen-up)": {
+      "keys": "12/12",
+      "phone": "20/20",
+      "wallet": "0/12",
+      "empty-frame alarms": "0/24"
+    }
+  }
+}

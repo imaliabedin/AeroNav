@@ -1,5 +1,10 @@
 # Vision server (Layer 1 perception)
 
+**Trained detector:** when `models/drone_items.pt` exists the server uses it by default (`--engine items`):
+a YOLO11n model trained on this simulation for **wallet, keys, phone, purse** (targets `wallet`, `key`, `phone`,
+`purse`, or `all`). How it was made and how well it does: [train/README.md](train/README.md).
+`--engine yolo-world` keeps the original open-vocabulary detector.
+
 Unity's `TargetDetector` sends JPEG frames from the drone's downward camera (`DroneCamera`)
 to this server, which runs a real image detector and answers whether the selected target
 (`key` or `phone`) is in the frame.

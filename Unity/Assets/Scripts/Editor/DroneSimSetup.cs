@@ -37,7 +37,7 @@ public static class DroneSimSetup
         ("Traffic cone", "Assets/Models/Cars/cone.fbx",              0.7f,  Vector3.zero,           false),
         ("Phone",        "Assets/Models/Items/phone.obj",            0.15f, new Vector3(90, 0, 0),  false),
         ("Keys",         "Assets/Models/Items/key.obj",              0.12f, new Vector3(90, 0, 0),  false),
-        ("Wallet",       "Assets/Models/Items/pouch.obj",            0.18f, Vector3.zero,           false),
+        ("Wallet",       "Assets/Models/Items/wallet.obj",           0.18f, Vector3.zero,           false),
     };
 
     [MenuItem("Drone Sim/Build Parking Lot Scene")]

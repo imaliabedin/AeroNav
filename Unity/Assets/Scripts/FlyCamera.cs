@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// Free-fly camera: hold RMB to look, WASD to move, Q/E down/up, Shift for speed,
-/// scroll to dolly. If `follow` is set, it hovers above that target instead.
+/// scroll to dolly. If `follow` is set, it hovers above that target instead. Runs on unscaled time, so it
+/// behaves the same at any simulation speed (Time.timeScale).
 public class FlyCamera : MonoBehaviour
 {
     public float moveSpeed = 8f;
@@ -25,7 +26,7 @@ public class FlyCamera : MonoBehaviour
     {
         // Width counts for less than depth: the view is wider than it is tall.
         float extent = Mathf.Max(size.x * 0.75f, size.z, size.y * 1.5f);
-        transform.position = center + new Vector3(0f, 1.2f * extent, -0.75f * extent);
+        transform.position = center + new Vector3(0f, 1.3f * extent, -0.65f * extent);   // ~63° down: a bit more ground
         transform.LookAt(center + new Vector3(0f, 0f, 0.05f * extent));
         var e = transform.eulerAngles;
         yaw = e.y;
@@ -41,9 +42,9 @@ public class FlyCamera : MonoBehaviour
         if (follow != null)
         {
             var target = follow.position + followOffset;
-            transform.position = Vector3.Lerp(transform.position, target, 1f - Mathf.Exp(-8f * Time.deltaTime));
+            transform.position = Vector3.Lerp(transform.position, target, 1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
             transform.rotation = Quaternion.Slerp(transform.rotation,
-                Quaternion.LookRotation(follow.position - transform.position), 1f - Mathf.Exp(-8f * Time.deltaTime));
+                Quaternion.LookRotation(follow.position - transform.position), 1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
             var r = transform.eulerAngles;
             yaw = r.y;
             pitch = r.x > 180f ? r.x - 360f : r.x;
@@ -67,7 +68,7 @@ public class FlyCamera : MonoBehaviour
         if (kb.qKey.isPressed) move -= Vector3.up;
 
         float speed = moveSpeed * (kb.shiftKey.isPressed ? fastMultiplier : 1f);
-        transform.position += move * speed * Time.deltaTime;
+        transform.position += move * speed * Time.unscaledDeltaTime;
 
         float scroll = mouse.scroll.ReadValue().y;
         if (Mathf.Abs(scroll) > 0.01f)

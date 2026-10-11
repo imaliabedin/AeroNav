@@ -3,66 +3,495 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SkyRL — Drone City</title>
+  <title>AeroNav — Object Finder</title>
   <style>
     * { box-sizing: border-box }
     body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: #0b0f18; color: #e6edf7; font: 14px/1.4 system-ui, -apple-system, sans-serif }
     header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #222b3a }
     header a { color: #e6edf7; text-decoration: none; font-weight: 800; margin-right: 10px }
     button { font: inherit; padding: 8px 12px; border-radius: 7px; border: 1px solid #2b3850; background: #141c2b; color: #e6edf7; cursor: pointer }
-    button:hover { border-color: #477dff }
+    button:hover:not(:disabled) { border-color: #477dff }
+    button:disabled { opacity: .45; cursor: default }
     button.on { background: #1d3366; border-color: #477dff }
     #run { background: #2f9e5f; border-color: #2f9e5f; font-weight: 700 }
     #stop { background: #7a2b2b; border-color: #7a2b2b }
+    #speed { font-weight: 700; min-width: 104px }
+    #speed.fast { background: #c9952b; border-color: #c9952b; color: #111 }
+    details.tools { margin-left: auto }
+    details.tools summary { cursor: pointer; color: #93a1b8; list-style: none; padding: 8px 4px }
+    details.tools[open] { flex-basis: 100%; margin-left: 0 }
+    details.tools .row { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 6px }
     .sep { width: 1px; height: 26px; background: #2b3850; margin: 0 4px }
-    #hint { color: #93a1b8; font-size: 13px; padding: 6px 14px; border-bottom: 1px solid #222b3a }
-    main { position: relative; flex: 1 }
+    #hint { color: #93a1b8; font-size: 13px; padding: 6px 14px; border-bottom: 1px solid #222b3a; min-height: 32px }
+    main { position: relative; flex: 1; min-height: 0 }
     canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none }
-    #load { position: absolute; inset: 0; display: grid; place-items: center; background: #0b0f18; color: #93a1b8 }
+    #load { position: absolute; inset: 0; display: grid; place-items: center; background: #0b0f18; color: #93a1b8; z-index: 5 }
     #load.done { display: none }
+
+    /* scan panel */
+    #panel { position: absolute; top: 12px; right: 12px; width: 300px; max-height: calc(100% - 24px); overflow: auto; z-index: 3;
+             background: rgba(11, 15, 24, .92); border: 1px solid #222b3a; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 14px }
+    #panel h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: #93a1b8; margin: 0 0 6px }
+    .step.off { opacity: .45; pointer-events: none }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center }
+    .chips button { flex: 1 1 calc(50% - 6px) }
+    .muted { color: #93a1b8; font-size: 13px }
+    .err { color: #ff8a8a; font-size: 13px }
+    #startScan { width: 100%; padding: 12px; font-weight: 700; background: #2f9e5f; border-color: #2f9e5f }
+    #stopScan { width: 100%; background: #7a2b2b; border-color: #7a2b2b }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 700; background: #222b3a }
+    .badge.ok { background: #1e5b3a } .badge.warn { background: #6b5317 } .badge.bad { background: #6b2323 } .badge.run { background: #1d3366 }
+    .stats { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; font-size: 13px }
+    .stats span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums }
+    .bar { height: 8px; border-radius: 4px; background: #222b3a; overflow: hidden; display: flex }
+    .bar i { display: block; height: 100% }
+    .result { border-radius: 8px; padding: 10px; font-size: 13px; background: #141c2b }
+    .result a { color: #8fb0ff }
+    .det { display: grid; grid-template-columns: 96px 1fr; gap: 8px; margin-top: 10px; font-size: 12px; align-items: start }
+    .det .thumb { position: relative; width: 96px; height: 96px; border-radius: 6px; overflow: hidden; background: #000 }
+    .det .thumb img { width: 100%; height: 100%; display: block }
+    .det .thumb i { position: absolute; border: 2px solid #ffd23f; box-shadow: 0 0 0 1px #000 }
+    .det b { font-size: 13px }
+    .det.weak { opacity: .55 }
+    .tag { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 99px; background: #6b5317; margin-left: 4px }
+    .det .coord { font-variant-numeric: tabular-nums }
+    details.adv summary { cursor: pointer; color: #93a1b8; font-size: 13px }
+    details.adv label { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 13px }
+    details.adv input { width: 80px; font: inherit; background: #141c2b; color: #e6edf7; border: 1px solid #2b3850; border-radius: 6px; padding: 4px 6px }
+
+    /* photo viewer (click a red beam) */
+    #viewer { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; background: rgba(5, 8, 14, .82) }
+    #viewer[hidden] { display: none }
+    #viewer .box { position: relative; display: flex; gap: 18px; max-width: calc(100% - 32px); max-height: calc(100% - 32px);
+                   background: #0f1522; border: 1px solid #2b3850; border-radius: 14px; padding: 16px }
+    #viewer .photo { position: relative; height: min(78vh, calc(100vw - 420px)); aspect-ratio: 1; flex: none; background: #000; border-radius: 8px; overflow: hidden }
+    #viewer .photo img { width: 100%; height: 100%; display: block }
+    #viewer .photo i { position: absolute; border: 3px solid #ff3b30; box-shadow: 0 0 0 1px #000 }
+    #viewer .zoom { position: absolute; width: 180px; height: 180px; border-radius: 10px; border: 3px solid #ff3b30; background-repeat: no-repeat; box-shadow: 0 2px 12px rgba(0,0,0,.7) }
+    #viewer .info { width: 300px; font-size: 14px; line-height: 1.6 }
+    #viewer h3 { margin: 0 0 8px; font-size: 20px }
+    #viewer .num { display: inline-block; background: #ff3b30; color: #fff; border-radius: 99px; padding: 0 10px; margin-right: 6px }
+    #viewer .x { position: absolute; top: 10px; right: 10px; font-size: 20px; line-height: 1; padding: 6px 12px; z-index: 1 }
+    #viewer .nav { display: flex; gap: 8px; margin-top: 14px }
+    @media (max-width: 900px) { #viewer .box { flex-direction: column } #viewer .photo { height: min(60vh, calc(100vw - 64px)) } #viewer .info { width: auto } }
+
+    /* tutorial */
+    #tutorial { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(5, 8, 14, .55); z-index: 4 }
+    #tutorial.hidden { display: none }
+    #tutorial .card { width: min(420px, calc(100% - 32px)); background: #0f1522; border: 1px solid #2b3850; border-radius: 14px; padding: 20px }
+    #tutorial h3 { margin: 0 0 10px; font-size: 18px }
+    #tutorial ol { margin: 0 0 14px; padding-left: 20px; color: #c3cddc } #tutorial li { margin: 4px 0 }
+    #tutorial button { background: #477dff; border-color: #477dff; font-weight: 700 }
+
+    @media (max-width: 700px) {
+      #panel { top: auto; bottom: 0; right: 0; left: 0; width: auto; max-height: 50%; border-radius: 12px 12px 0 0 }
+    }
   </style>
 </head>
 <body>
   <header>
-    <a href="index.html">✦ SkyRL</a>
-    <button id="run">▶ Run drone</button>
-    <button id="stop">■ Stop</button>
-    <span class="sep"></span>
-    <button data-tool="goal">◎ Place target</button>
-    <button data-tool="start">✈ Set start</button>
-    <button data-tool="wall">▦ Wall</button>
-    <button data-tool="Street light">Street light</button>
-    <button data-tool="Round tree">Tree</button>
-    <button data-tool="Van">Van</button>
-    <button data-tool="Traffic cone">Cone</button>
-    <span class="sep"></span>
-    <button id="surprise">Add surprise obstacles</button>
-    <button id="clear">Clear obstacles</button>
+    <a href="index.html">✦ AeroNav</a>
+    <span class="muted">Area search: select a region, choose what was lost, start the scan.</span>
+    <button id="speed" title="Simulation speed: drone, scan, traffic and timers">Speed: 1×</button>
+    <details class="tools" id="tools">
+      <summary>Sonar demo tools ▾</summary>
+      <div class="row">
+        <button id="run">▶ Run drone</button>
+        <button id="stop">■ Stop</button>
+        <span class="sep"></span>
+        <button data-tool="goal">◎ Place target</button>
+        <button data-tool="start">✈ Set start</button>
+        <button data-tool="wall">▦ Wall</button>
+        <button data-tool="Street light">Street light</button>
+        <button data-tool="Round tree">Tree</button>
+        <button data-tool="Van">Van</button>
+        <button data-tool="Traffic cone">Cone</button>
+        <span class="sep"></span>
+        <button id="surprise">Add surprise obstacles</button>
+        <button id="clear">Clear obstacles</button>
+      </div>
+    </details>
   </header>
-  <div id="hint">Pick a tool, then click anywhere in the city to place it (Ctrl+click removes). ▶ Run: the drone takes off, flies at 8–10 ft using only sonar, and lands on the target. Hold right mouse + WASD to move the camera.</div>
+  <div id="hint">Loading…</div>
   <main>
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="load">Loading Drone City… <span id="pct">0%</span></div>
+
+    <aside id="panel">
+      <section class="step" id="stepRegion">
+        <h2>1 · Search region</h2>
+        <div class="row" style="justify-content: space-between">
+          <span id="cornerText">Corners: 0 / 4</span>
+          <span class="badge" id="regionBadge">not set</span>
+        </div>
+        <div class="row" style="margin-top: 8px">
+          <button id="selectRegion">Select corners</button>
+          <button id="undoCorner">Undo</button>
+          <button id="resetRegion">Reset</button>
+        </div>
+        <div id="regionInfo" class="muted" style="margin-top: 6px"></div>
+      </section>
+
+      <section class="step" id="stepObject">
+        <h2>2 · Lost object</h2>
+        <div class="row chips" id="objects">
+          <button data-obj="Wallet">Wallet</button>
+          <button data-obj="Keys">Keys</button>
+          <button data-obj="Phone">Phone</button>
+          <button data-obj="Purse">Purse</button>
+        </div>
+      </section>
+
+      <section class="step" id="stepScan">
+        <h2>3 · Scan</h2>
+        <button id="startScan" disabled>Start scan</button>
+        <button id="stopScan" hidden>Stop scan</button>
+        <details class="adv">
+          <summary>Scan settings</summary>
+          <label>Altitude (m) <input id="cfgAlt" type="number" min="2.5" max="4" step="0.25" value="2.5"></label>
+          <label>Image overlap (%) <input id="cfgOverlap" type="number" min="2" max="50" step="1" value="15"></label>
+          <label>Speed (m/s) <input id="cfgSpeed" type="number" min="1" max="12" step="0.5" value="5"></label>
+        </details>
+      </section>
+
+      <section id="status" hidden>
+        <h2>Progress <span class="badge run" id="phaseBadge">scanning</span></h2>
+        <div class="stats">
+          <span>Lane</span><span id="sLane">–</span>
+          <span>Images saved</span><span id="sSaved">0</span>
+          <span>Save failures</span><span id="sFailed">0</span>
+          <span title="Planned photos not taken because the drone had to fly above 4 m (they are revisited)">Skipped (too high)</span><span id="sSkipped">0</span>
+          <span>Waiting to save</span><span id="sPending">0</span>
+          <span>Storage</span><span><span class="badge ok" id="storageBadge">ok</span></span>
+        </div>
+        <div style="margin-top: 10px" class="muted">Ground clearly seen</div>
+        <div class="bar" title="green: seen · amber: blocked by traffic / suspected · grey: under buildings or trees · red: not yet seen">
+          <i id="barSeen" style="background:#2f9e5f"></i><i id="barOcc" style="background:#c9952b"></i><i id="barHidden" style="background:#4a566b"></i><i id="barUnseen" style="background:#8a3030"></i>
+        </div>
+        <div class="stats" style="margin-top: 6px">
+          <span>Seen</span><span id="cSeen">–</span>
+          <span>Blocked by traffic</span><span id="cOcc">–</span>
+          <span>Suspected (near traffic)</span><span id="cSus">–</span>
+          <span>Under trees / objects</span><span id="cHidden">–</span>
+          <span title="Ground under buildings is not searched">Buildings (not scanned)</span><span id="cBuild">–</span>
+          <span>Not yet seen</span><span id="cUnseen">–</span>
+          <span>Road cells seen</span><span id="cRoad">–</span>
+          <span title="Flight time in real-world minutes (the same at any playback speed)">Search time</span><span id="cTime">–</span>
+          <span title="Ground clearly seen per second of search time">Search rate</span><span id="cRate">–</span>
+        </div>
+      </section>
+
+      <section id="result" class="result" hidden></section>
+
+      <section id="ai">
+        <h2>AI detections <span class="badge" id="aiBadge">checking…</span></h2>
+        <div class="muted" id="aiStatus">Looking for the model server…</div>
+        <div id="dets"></div>
+      </section>
+    </aside>
+
+    <div id="viewer" hidden>
+      <div class="box">
+        <button class="x" id="viewerClose" title="Close and go back to the map (Esc)">✕</button>
+        <div class="photo" id="vPhoto"></div>
+        <div class="info" id="vInfo"></div>
+      </div>
+    </div>
+
+    <div id="tutorial" class="hidden">
+      <div class="card">
+        <h3>Search an area</h3>
+        <ol>
+          <li><b>Click four spots on the ground</b> to mark the corners of the area to search. They can be in any order.</li>
+          <li>The area turns <span style="color:#3dff74">green</span> when it is valid (red: try other corners). The blue lines are the drone's planned lanes.</li>
+          <li><b>Choose what was lost</b>: wallet, keys, phone or purse.</li>
+          <li>Press <b>Start scan</b>. The drone flies the lanes and photographs the ground straight below it, then goes back to spots that traffic was blocking.</li>
+        </ol>
+        <p class="muted" style="margin: 0 0 14px">Hold the right mouse button and use WASD to move the view. An AI model checks every photo for the lost object; images where it finds it are listed with their estimated position.</p>
+        <button id="tutorialOk">Got it, select corners</button>
+      </div>
+    </div>
   </main>
   <script src="drone-city/Build/drone-city.loader.js"></script>
   <script>
-    const canvas = document.getElementById('unity-canvas');
+    const $ = id => document.getElementById(id);
+    const canvas = $('unity-canvas');
     const send = (method, arg) => window.city && (arg === undefined ? city.SendMessage('WebControls', method) : city.SendMessage('WebControls', method, arg));
-    const hint = document.getElementById('hint');
+    const scan = (method, arg) => window.city && (arg === undefined ? city.SendMessage('ScanControls', method) : city.SendMessage('ScanControls', method, arg));
+    const hint = $('hint');
     const tools = document.querySelectorAll('[data-tool]');
+    const ui = { state: 'idle', valid: false, corners: 0, object: null, busy: false };
 
-    document.getElementById('run').onclick = () => { send('Run'); tools.forEach(t => t.classList.remove('on')); hint.textContent = 'Flying. Grey lines are sonar rays, red boxes are obstacles the drone has heard, yellow is its route.'; };
-    document.getElementById('stop').onclick = () => { send('Stop'); hint.textContent = 'Stopped. Pick a tool and click on the lot, or press ▶ Run.'; };
-    document.getElementById('clear').onclick = () => send('Clear');
-    document.getElementById('surprise').onclick = () => send('Surprise');
+    // ---------- sonar demo tools (unchanged behaviour) ----------
+    $('run').onclick = () => { send('Run'); tools.forEach(t => t.classList.remove('on')); hint.textContent = 'Flying. Grey lines are sonar rays, red boxes are obstacles the drone has heard, yellow is its route.'; };
+    $('stop').onclick = () => { send('Stop'); hint.textContent = 'Stopped. Pick a tool and click on the lot, or press ▶ Run.'; };
+    $('clear').onclick = () => send('Clear');
+    $('surprise').onclick = () => send('Surprise');
     tools.forEach(b => b.onclick = () => {
       send('Tool', b.dataset.tool);
       tools.forEach(t => t.classList.toggle('on', t === b));
+      $('selectRegion').classList.remove('on');
       hint.textContent = b.dataset.tool === 'goal' ? 'Click where the drone should land, anywhere in the city (it snaps to the nearest open ground).'
         : b.dataset.tool === 'start' ? 'Click where the drone should take off from (it snaps to the nearest open ground).'
         : `Click to place: ${b.textContent}. Ctrl+click removes.`;
       canvas.focus();
     });
+
+    // ---------- simulation speed ----------
+    // Each click steps 1× → 5× → 10× → 1×.
+    const speeds = [1, 5, 10];
+    let speedIdx = 0;
+    function setSpeed(i) {
+      speedIdx = i;
+      const k = speeds[i];
+      send('SetTimeScale', String(k));
+      $('speed').textContent = `Speed: ${k}×`;
+      $('speed').classList.toggle('fast', k > 1);
+    }
+    $('speed').onclick = () => { setSpeed((speedIdx + 1) % speeds.length); canvas.focus(); };
+
+    // ---------- area scan ----------
+    function selectCorners() {
+      scan('BeginSelect');
+      tools.forEach(t => t.classList.remove('on'));
+      $('selectRegion').classList.add('on');
+      canvas.focus();
+    }
+    $('selectRegion').onclick = selectCorners;
+    $('undoCorner').onclick = () => scan('UndoCorner');
+    $('resetRegion').onclick = () => { scan('ResetRegion'); $('result').hidden = true; $('viewer').hidden = true; ai.resultsKey = null; ai.viewer = null; };
+    document.querySelectorAll('[data-obj]').forEach(b => b.onclick = () => scan('SetObject', b.dataset.obj));
+    $('startScan').onclick = () => { $('result').hidden = true; $('viewer').hidden = true; ai.resultsKey = null; ai.viewer = null; scan('StartScan'); };
+    $('stopScan').onclick = () => scan('StopScan');
+    ['cfgAlt', 'cfgOverlap', 'cfgSpeed'].forEach(id => $(id).onchange = () => scan('SetConfig', JSON.stringify({
+      altitude: +$('cfgAlt').value, overlap: +$('cfgOverlap').value / 100, speed: +$('cfgSpeed').value })));
+
+    // Shown on every page load.
+    function showTutorial() { $('tutorial').classList.remove('hidden'); }
+    $('tutorialOk').onclick = () => {
+      $('tutorial').classList.add('hidden');
+      selectCorners();
+    };
+
+    // city.html?autoscan=6,-18;34,-18;34,-1;6,-1&object=Phone[&speed=5|10][&alt=m] : region, object and start without clicks (automated tests).
+    function autoscan() {
+      const q = new URLSearchParams(location.search), corners = q.get('autoscan');
+      if (!corners) return false;
+      const go = () => {
+        if (!window.city) return setTimeout(go, 100);
+        const k = speeds.indexOf(+q.get('speed'));
+        if (k > 0) setSpeed(k);
+        scan('BeginSelect');
+        corners.split(';').forEach(c => scan('AddCornerXZ', c));
+        scan('SetObject', q.get('object') || 'Phone');
+        if (q.get('alt')) scan('SetConfig', JSON.stringify({ altitude: +q.get('alt') }));
+        scan('StartScan');
+      };
+      go();
+      return true;
+    }
+
+    function refresh() {
+      const busy = ['starting', 'scanning', 'revisiting'].includes(ui.state);
+      ui.busy = busy;
+      $('stepRegion').classList.toggle('off', busy);
+      $('stepObject').classList.toggle('off', busy);
+      $('startScan').hidden = busy;
+      $('stopScan').hidden = !busy;
+      $('startScan').disabled = !(ui.valid && ui.object);
+      $('startScan').textContent = !ui.valid ? 'Select a valid region first' : !ui.object ? 'Choose the lost object' : 'Start scan';
+      document.querySelectorAll('[data-obj]').forEach(b => b.classList.toggle('on', b.dataset.obj === ui.object));
+      $('tools').querySelectorAll('button').forEach(b => b.disabled = busy);
+    }
+
+    const pct = (n, d) => d ? Math.round(100 * n / d) : 0;
+    function showCoverage(c) {
+      if (!c) return;
+      const occ = c.occluded_moving + c.suspected;
+      $('cSeen').textContent = `${c.seen} / ${c.cells} m²`;
+      $('cOcc').textContent = c.occluded_moving;
+      $('cSus').textContent = c.suspected;
+      $('cHidden').textContent = c.hidden_static;
+      $('cBuild').textContent = `${c.buildings || 0} m²`;
+      $('cUnseen').textContent = c.unseen;
+      $('cRoad').textContent = `${c.road_seen} / ${c.road_cells}`;
+      $('barSeen').style.width = pct(c.seen, c.cells) + '%';
+      $('barOcc').style.width = pct(occ, c.cells) + '%';
+      $('barHidden').style.width = pct(c.hidden_static, c.cells) + '%';
+      $('barUnseen').style.width = pct(c.unseen, c.cells) + '%';
+    }
+
+    // ---------- AI results (scan_server.py runs each saved image through VisionServer's model) ----------
+    const ai = window.ai = { scanId: null, timer: null, lastSig: null, scanning: false };
+    async function checkVision() {
+      try {
+        const h = await (await fetch('api/vision')).json();
+        $('aiBadge').className = 'badge ' + (h.ok ? 'ok' : 'bad');
+        $('aiBadge').textContent = h.ok ? 'ready' : 'offline';
+        if (!ai.scanId) $('aiStatus').textContent = h.ok ? `Model ready (${h.engine}). Each image is checked as it is saved.`
+          : 'Model server not reachable: images are saved but not analyzed. Start VisionServer (see DEMO.md).';
+      } catch (e) {
+        $('aiBadge').className = 'badge bad'; $('aiBadge').textContent = 'offline';
+        $('aiStatus').textContent = 'No scan server API here: start the site with python3 scan_server.py.';
+      }
+    }
+    checkVision();
+
+    function watchScan(id) {
+      if (ai.scanId === id) return;
+      ai.scanId = id; ai.lastSig = null; $('dets').innerHTML = '';
+      clearInterval(ai.timer);
+      ai.timer = setInterval(pollDetections, 1200);
+      pollDetections();
+    }
+
+    async function pollDetections() {
+      const id = ai.scanId;
+      let d;
+      try { d = await (await fetch(`api/scans/${id}/detections`)).json(); } catch (e) { $('aiStatus').textContent = 'Cannot read AI results: ' + e; return; }
+      if (id !== ai.scanId || d.error) return;            // a newer scan started meanwhile
+      const c = d.inference, pending = c.queued + c.running;
+      const found = d.sightings.length;
+      const finished = d.status !== 'running' && !ai.scanning;
+      $('aiStatus').innerHTML = `Analyzed ${c.analyzed} image${c.analyzed === 1 ? '' : 's'}`
+        + (pending ? ` · <b>${pending} waiting</b>` : '')
+        + (c.failed ? ` · <span class="err">${c.failed} failed (not counted as "not found")</span>` : '')
+        + ` · ${found ? `<b>${found} possible ${d.target_category} location${found === 1 ? '' : 's'}</b>` : `no ${d.target_category} detected` + (finished && !pending ? '' : ' yet')}`;
+      $('aiBadge').className = 'badge ' + (c.failed ? 'bad' : pending ? 'run' : found ? 'ok' : '');
+      $('aiBadge').textContent = c.failed ? 'errors' : pending ? 'analyzing' : found ? 'found' : finished ? 'done' : 'waiting';
+      $('dets').innerHTML = found ? `<div style="margin-top:6px">Red beams on the map mark ${found === 1 ? 'the spot' : 'each spot'}. Click a beam to see its photo.</div>` : '';
+      if (finished) showResults(d, id);
+      if (finished && !pending) clearInterval(ai.timer);
+    }
+
+    // After the scan: a red beam in the city at each sighting's estimated ground position (the camera zooms out to the
+    // whole city). Clicking a beam (Unity sends "sighting_click") opens that sighting's photo here, full size.
+    const weakOf = g => g.best_confidence < 0.5 || (g.photos_covering >= 2 && g.photos_detected / g.photos_covering < 0.5);
+    function showResults(d, id) {
+      const items = d.sightings.filter(g => g.world_position);
+      const key = id + JSON.stringify(items.map(g => [g.detection_ids.length, g.photos_covering]));
+      ai.viewer = { id, items, byId: Object.fromEntries(d.detections.map(r => [r.detection_id, r])), target: d.target_category };
+      if (key === ai.resultsKey) return;
+      ai.resultsKey = key;
+      scan('ShowSightings', JSON.stringify({ items: items.map(g => ({ x: g.world_position.x, z: g.world_position.z, weak: weakOf(g) })) }));
+    }
+
+    function openViewer(k) {
+      const v = ai.viewer;
+      if (!v || !v.items[k]) return;
+      const g = v.items[k], r = v.byId[g.best_detection_id], b = r.bbox, w = r.world_position || {}, px = r.bbox_pixels || {};
+      const src = `api/scans/${v.id}/image/${r.image_id}`;
+      // Zoom inset: a window about 2.5x the box centered on it, in the corner away from it.
+      const S = 180, cx = b.x + b.w / 2, cy = b.y + b.h / 2, win = Math.max(0.12, 2.5 * Math.max(b.w, b.h)), full = S / win;
+      const zoom = `background-image:url(${src});background-size:${full}px ${full}px;background-position:${S / 2 - cx * full}px ${S / 2 - cy * full}px;`
+        + (cx > 0.5 ? 'left:12px;' : 'right:12px;') + (cy > 0.5 ? 'top:12px;' : 'bottom:12px;');
+      $('vPhoto').innerHTML = `<img src="${src}" alt="Drone photo">
+        <i style="left:${b.x * 100}%;top:${b.y * 100}%;width:${b.w * 100}%;height:${b.h * 100}%"></i>
+        <span class="zoom" style="${zoom}" title="Zoomed in on the detection"></span>`;
+      const weak = weakOf(g);
+      $('vInfo').innerHTML = `<h3><span class="num">${k + 1}</span>${g.category}${weak ? ' <span class="tag">unconfirmed</span>' : ''}</h3>
+        <b>${(g.best_confidence * 100).toFixed(0)}%</b> model confidence<br>
+        Found in <b>${g.photos_detected}</b>${g.photos_covering != null ? ` of ${g.photos_covering}` : ''} photo${g.photos_detected === 1 ? '' : 's'} of this spot<br><br>
+        <b>Location</b> (estimated, ±${w.error_estimate_m} m)<br>x ${g.world_position.x.toFixed(2)} m, z ${g.world_position.z.toFixed(2)} m<br>
+        <span class="muted">Unity world meters: x east, z north</span><br><br>
+        <span class="muted">Photo #${r.sequence_number}, ${new Date(r.timestamp).toLocaleTimeString()}, taken ${(r.ground_footprint.altitude).toFixed(1)} m above the ground.
+        Box ${Math.round(px.x)},${Math.round(px.y)} ${Math.round(px.w)}×${Math.round(px.h)} px.</span>
+        ${v.items.length > 1 ? `<div class="nav"><button id="vPrev">‹ Previous</button><button id="vNext">Next ›</button></div>` : ''}`;
+      if (v.items.length > 1) {
+        $('vPrev').onclick = () => { scan('FocusSighting', String((k + v.items.length - 1) % v.items.length)); openViewer((k + v.items.length - 1) % v.items.length); };
+        $('vNext').onclick = () => { scan('FocusSighting', String((k + 1) % v.items.length)); openViewer((k + 1) % v.items.length); };
+      }
+      $('viewer').hidden = false;
+    }
+    const closeViewer = () => { $('viewer').hidden = true; canvas.focus(); };
+    $('viewerClose').onclick = closeViewer;
+    $('viewer').addEventListener('click', e => { if (e.target === $('viewer')) closeViewer(); });
+    window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('viewer').hidden) closeViewer(); });
+
+    // Mission time comes from the simulation clock, so it is real-world flight time at any playback speed.
+    function showTime(seconds, coverage) {
+      if (seconds == null) return;
+      const min = seconds / 60;
+      $('cTime').textContent = `${min.toFixed(2)} min`;
+      const seen = coverage ? coverage.seen : 0;
+      $('cRate').textContent = seconds > 0 ? `${(seen / seconds).toFixed(2)} m²/s` : '–';
+    }
+
+    window.addEventListener('scan', ev => {
+      const m = ev.detail;
+      if (m.state) ui.state = m.state;
+      switch (m.type) {
+        case 'region': {
+          ui.valid = m.valid; ui.corners = m.corners;
+          $('cornerText').textContent = `Corners: ${m.corners} / 4`;
+          const b = $('regionBadge');
+          b.className = 'badge ' + (m.valid ? 'ok' : m.corners === 4 ? 'bad' : '');
+          b.textContent = m.valid ? 'ready' : m.corners === 4 ? 'invalid' : m.corners ? 'selecting' : 'not set';
+          $('regionInfo').innerHTML = m.error ? `<span class="err">${m.error}</span>`
+            : m.valid ? `${Math.round(m.area_m2)} m²${m.buildings_m2 ? ` (${m.buildings_m2} m² buildings, not searched)` : ''} · ${m.lanes} lanes · ~${m.planned_images} images · each image ${m.footprint[0].toFixed(1)} × ${m.footprint[1].toFixed(1)} m`
+            : m.corners ? `Click ${4 - m.corners} more corner${m.corners === 3 ? '' : 's'}.` : '';
+          hint.textContent = m.valid ? (ui.object ? 'Region ready. Press Start scan.' : 'Region ready. Choose the lost object.')
+            : m.error ? m.error + ' Undo or Reset and try again.' : `Click ${4 - m.corners} more corner${m.corners === 3 ? '' : 's'} on the ground.`;
+          break;
+        }
+        case 'sighting_click':
+          openViewer(m.index);
+          break;
+        case 'object':
+          ui.object = m.object;
+          if (ui.valid) hint.textContent = 'Ready. Press Start scan.';
+          break;
+        case 'state':
+          if (!ui.ready) { ui.ready = true; autoscan() || showTutorial(); }   // first message: ScanControls exists now
+          hint.textContent = m.message;
+          if (m.state === 'scanning' || m.state === 'starting') { $('status').hidden = false; $('result').hidden = true; }
+          $('phaseBadge').textContent = m.state;
+          $('phaseBadge').className = 'badge ' + (m.state === 'error' ? 'bad' : m.state === 'revisiting' ? 'warn' : 'run');
+          if (m.state === 'error') { $('result').hidden = false; $('result').innerHTML = `<b>Scan not started.</b><br>${m.message}`; }
+          break;
+        case 'progress':
+          if (m.scan_id) { ai.scanning = true; watchScan(m.scan_id); }
+          $('status').hidden = false;
+          $('phaseBadge').textContent = m.state;
+          $('sLane').textContent = m.state === 'revisiting' ? `revisit round ${m.revisit_round}` : `${m.lane} / ${m.lanes}`;
+          $('sSaved').textContent = m.saved;
+          $('sFailed').textContent = m.failed;
+          $('sSkipped').textContent = m.skipped_altitude || 0;
+          $('sPending').textContent = m.pending;
+          $('storageBadge').className = 'badge ' + (m.failed ? 'bad' : m.pending > 3 ? 'warn' : 'ok');
+          $('storageBadge').textContent = m.failed ? `${m.failed} failed` : m.pending > 3 ? 'slow' : 'ok';
+          showCoverage(m.coverage);
+          showTime(m.mission_s, m.coverage);
+          if (m.warning) hint.textContent = m.warning;
+          break;
+        case 'done': {
+          ui.state = m.status === 'stopped' ? 'stopped' : 'done';
+          ai.scanning = false;
+          if (m.scan_id) { watchScan(m.scan_id); clearInterval(ai.timer); ai.timer = setInterval(pollDetections, 1200); pollDetections(); }
+          showCoverage(m.coverage);
+          showTime(m.mission_s, m.coverage);
+          const c = m.coverage || {};
+          const notSeen = (c.occluded_moving || 0) + (c.suspected || 0) + (c.unseen || 0);
+          $('phaseBadge').textContent = m.status;
+          $('phaseBadge').className = 'badge ' + (m.status === 'complete' ? 'ok' : 'warn');
+          const r = $('result');
+          r.hidden = false;
+          r.innerHTML = (m.status === 'complete'
+              ? `<b>Scan complete.</b> All open ground in the region was photographed with a clear view.`
+              : m.status === 'stopped' ? `<b>Scan stopped.</b> ${notSeen} m² of open ground not clearly seen yet.`
+              : `<b>Scan incomplete.</b> ${notSeen} m² of open ground could not be seen clearly (traffic did not move away, or images failed to save).`)
+            + (c.hidden_static ? ` ${c.hidden_static} m² are under trees or other objects (not visible from above).` : '')
+            + (c.buildings ? ` ${c.buildings} m² of buildings were not searched.` : '')
+            + `<br>${m.saved} images saved${m.failed ? `, <span class="err">${m.failed} failed</span>` : ''}.`
+            + (m.scan_id ? `<br>Scan <a href="api/scans/${m.scan_id}" target="_blank">${m.scan_id}</a>` : '')
+            + `<br><span class="muted">Red beams on the map mark possible locations; click one to see its photo.</span>`;
+          hint.textContent = m.status === 'complete' ? 'Scan complete. Images saved.' : 'Scan finished with areas not clearly seen; see the panel.';
+          break;
+        }
+      }
+      refresh();
+    });
+    refresh();
 
     createUnityInstance(canvas, {
       dataUrl: 'drone-city/Build/drone-city.data',
@@ -70,9 +499,13 @@
       codeUrl: 'drone-city/Build/drone-city.wasm',
       companyName: 'SkyRL', productName: 'Drone City', productVersion: '1.0',
       matchWebGLToCanvasSize: true,
-    }, p => document.getElementById('pct').textContent = Math.round(p * 100) + '%')
-      .then(instance => { window.city = instance; document.getElementById('load').classList.add('done'); })
-      .catch(e => document.getElementById('load').textContent = 'Could not start the simulation: ' + e);
+    }, p => $('pct').textContent = Math.round(p * 100) + '%')
+      .then(instance => {
+        window.city = instance;
+        $('load').classList.add('done');
+        hint.textContent = 'Starting…';
+      })
+      .catch(e => $('load').textContent = 'Could not start the simulation: ' + e);
   </script>
 </body>
 </html>

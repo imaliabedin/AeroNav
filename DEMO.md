@@ -36,13 +36,26 @@ What you see:
 Try it: drag a **Street light**, **Pine tree** or a car from *Unity objects* onto the drone's route, or around the
 landing zone, while it flies. The drone discovers the object only when the echoes come back.
 
-**Drone City (the main demo):** open **http://localhost:8000** and press **Launch SkyRL**.
-It is the Unity simulation running in the browser: the parking lot inside a city. Use the buttons on top:
-**Place target** (then click on the lot), **Wall / Street light / Tree / Van / Cone** (click to place, Ctrl+click removes),
-**Run drone**, **Stop**, **Add surprise obstacles**, **Clear obstacles**. The drone navigates by sonar only.
+**Drone City area search (the main demo):** start the scan server instead of `http.server`, which also serves the site:
+
+```bash
+cd path/to/HAADRONES1/VisionServer && .venv/bin/python server.py --no-store    # AI model (terminal 1, port 8765)
+cd path/to/HAADRONES1 && python3 scan_server.py                                # site + storage + AI hand-off (terminal 2)
+```
+
+The model is `VisionServer/models/drone_items.pt` (from DroneScanner_AI.zip; not in Git, copy it there).
+
+Open **http://localhost:8000** and press **Launch Drone → Object Finder**. A short tutorial explains the steps: click four corners on the ground
+(the region turns green when valid and shows the planned lanes), choose **Wallet / Keys / Phone / Purse**, press **Start scan**.
+The object is hidden at a random open spot in the region. The drone flies a lawnmower pattern and photographs the ground straight below.
+Then it goes back to road spots that passing cars were covering. The panel shows lanes, images saved or failed, and how much ground was clearly seen.
+Every photo (taken at 2.5–4 m, the heights the model was trained on) goes to the AI model. Photos where it finds the chosen object
+appear under **AI detections** with their estimated ground position; the others are deleted. Format: [image_store/SCANS.md](image_store/SCANS.md).
+
+The earlier sonar tools (**Place target**, obstacles, **Run drone**) are under **Sonar demo tools** in the header.
 The first load downloads about 50 MB. To rebuild it after changing the Unity project: Unity menu **Drone Sim → Build Web (Drone City)**.
 
-The website and the vision part below are independent: the website needs no Python server or Unity.
+The sonar Flight Lab needs no Python server or Unity. The area scan needs `scan_server.py` to save images.
 
 **Honest status:** the vision detector does not recognize keys or phones in this scene yet, so expect **NOT FOUND**.
 Sonar navigation, the camera, the server connection and image storage all work and can be shown.

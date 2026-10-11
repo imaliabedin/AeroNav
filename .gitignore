@@ -53,3 +53,25 @@ VisionServer/models/*.pt
 # Redundant exported Unity packages
 DroneGraphic*.unitypackage
 DroneGraphic-preview.png
+
+# Area-scan captures (scan_server.py)
+image_store/scans/
+
+# Building2 Unity project (Rescue Mission)
+Building2/[Ll]ibrary/
+Building2/[Tt]emp/
+Building2/[Ll]ogs/
+Building2/[Oo]bj/
+Building2/[Uu]ser[Ss]ettings/
+Building2/*.csproj
+Building2/*.sln
+Building2/*.slnx
+Building2/.vscode/
+
+# Rescue Mission frames (scan_server.py)
+image_store/rescue/
+# Rescue Mission WebGL build
+
+# Keep the website's WebGL builds in the repository (needed to run the demo without Unity)
+!drone-city/Build/
+!rescue-sim/Build/

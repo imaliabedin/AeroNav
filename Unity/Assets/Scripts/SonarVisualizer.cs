@@ -22,6 +22,8 @@ public class SonarVisualizer : MonoBehaviour
     /// A camera that renders into a texture but should still get the overlay (tests). Others with a target texture,
     /// such as the drone's vision camera, never do, so stored images stay clean.
     public Camera alsoDrawOn;
+    /// Draw the status text box (off while the website shows scan results).
+    public bool hud = true;
 
     static readonly Color Wave = new Color(0.3f, 0.85f, 1f, 0.55f);
     static readonly Color ObstacleEcho = new Color(1f, 0.55f, 0.1f, 1f);
@@ -69,6 +71,54 @@ public class SonarVisualizer : MonoBehaviour
         if (kb != null && kb.vKey.wasPressedThisFrame) view = (View)(((int)view + 1) % 3);
     }
 
+    // Illustrative wavefront: three great circles of a sphere growing at visualSpeed. Drawn as a line mesh in the
+    // scene (not the overlay), so buildings hide it, with the shared ground-to-height fade (HeightFade). Layer 2:
+    // the drone's vision camera never photographs it.
+    Mesh ringMesh;
+    readonly List<Vector3> ringV = new List<Vector3>();
+    readonly List<Color> ringC = new List<Color>();
+    readonly List<int> ringI = new List<int>();
+
+    void LateUpdate()
+    {
+        if (view == View.Off || sensor == null || pulses.Count == 0) return;
+        ringV.Clear(); ringC.Clear(); ringI.Clear();
+        float now = Now, range = MaxRange;
+        foreach (var p in pulses)
+        {
+            float travelled = (now - p.time) * visualSpeed;
+            if (travelled < 0f || travelled > range) continue;
+            var c = Wave; c.a *= 1f - travelled / range;
+            RingMesh(p.origin, travelled, Vector3.right, Vector3.forward, c);
+            RingMesh(p.origin, travelled, Vector3.right, Vector3.up, c * new Color(1, 1, 1, 0.5f));
+            RingMesh(p.origin, travelled, Vector3.forward, Vector3.up, c * new Color(1, 1, 1, 0.5f));
+        }
+        if (ringV.Count == 0) return;
+        if (ringMesh == null) ringMesh = new Mesh { name = "Sonar rings", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+        ringMesh.Clear();
+        ringMesh.SetVertices(ringV);
+        ringMesh.SetColors(ringC);
+        ringMesh.SetIndices(ringI, MeshTopology.Lines, 0);
+        Graphics.DrawMesh(ringMesh, Matrix4x4.identity, HeightFade.SharedMaterial, 2);
+    }
+
+    void RingMesh(Vector3 center, float r, Vector3 u, Vector3 v, Color c)
+    {
+        const int n = 48;
+        int first = ringV.Count;
+        for (int i = 0; i < n; i++)
+        {
+            float a = i * Mathf.PI * 2f / n;
+            var p = center + (u * Mathf.Cos(a) + v * Mathf.Sin(a)) * r;
+            ringV.Add(p);
+            ringC.Add(HeightFade.At(c, p.y));
+            ringI.Add(first + i);
+            ringI.Add(first + (i + 1) % n);
+        }
+    }
+
+    void OnDestroy() { if (ringMesh != null) Destroy(ringMesh); }
+
     float Now => sensor ? sensor.Clock : 0f;
     float MaxRange => sensor ? sensor.settings.maxRange : 6f;
 
@@ -102,14 +152,7 @@ public class SonarVisualizer : MonoBehaviour
             float travelled = (now - p.time) * visualSpeed;   // how far the drawn sound has gone
             if (travelled < 0f || travelled > 2f * range + 1f) continue;
 
-            // Illustrative wavefront: three great circles of a sphere growing at visualSpeed.
-            if (travelled <= range)
-            {
-                var c = Wave; c.a *= 1f - travelled / range;
-                Circle(p.origin, travelled, Vector3.right, Vector3.forward, c);
-                Circle(p.origin, travelled, Vector3.right, Vector3.up, c * new Color(1, 1, 1, 0.5f));
-                Circle(p.origin, travelled, Vector3.forward, Vector3.up, c * new Color(1, 1, 1, 0.5f));
-            }
+            // The wavefront rings are drawn in LateUpdate (depth-tested, fading with height).
 
             foreach (var m in p.samples)
             {
@@ -171,19 +214,6 @@ public class SonarVisualizer : MonoBehaviour
         GL.Vertex(b);
     }
 
-    static void Circle(Vector3 center, float r, Vector3 u, Vector3 v, Color c)
-    {
-        const int n = 48;
-        var prev = center + u * r;
-        for (int i = 1; i <= n; i++)
-        {
-            float a = i * Mathf.PI * 2f / n;
-            var p = center + (u * Mathf.Cos(a) + v * Mathf.Sin(a)) * r;
-            Line(prev, p, c);
-            prev = p;
-        }
-    }
-
     static void Cross(Vector3 p, float s, Color c)
     {
         Line(p - Vector3.right * s, p + Vector3.right * s, c);
@@ -205,7 +235,7 @@ public class SonarVisualizer : MonoBehaviour
 
     void OnGUI()
     {
-        if (sensor == null) return;
+        if (sensor == null || !hud) return;
         if (label == null)
         {
             label = new GUIStyle(GUI.skin.label) { fontSize = 11, richText = true, alignment = TextAnchor.MiddleCenter };

@@ -7,9 +7,16 @@ Unity POSTs a JPEG/PNG frame to /detect?target=key&conf=0.3 and gets back JSON:
      "engine": "yolo-world", "latencyMs": 84.0, "error": "", "candidates": [...]}
 
 Engines:
-  yolo-world (default)  local open-vocabulary detector, no API key, runs on CPU/MPS
+  items (default when models/drone_items.pt exists)  YOLO11n fine-tuned on Unity renders of this scene
+                        (train/): wallet, keys, phone, purse. Targets: key, phone, wallet, purse, all
+  yolo-world            local open-vocabulary detector, no API key, runs on CPU/MPS
   gemini                Google Gemini vision API; key read from GEMINI_API_KEY on this
                         machine only, never sent to or stored in the Unity client
+
+Area scan: target=all returns every object above `conf` in "objects" (category, label, confidence, bbox),
+using a second YOLO-World instance prompted with SCAN_PROMPTS, so key/phone answers are unchanged.
+POST /report (JSON from Unity's ScanMission) writes drone_images/reports/<session>/report.html with
+evidence images, using report.py.
 
 Frame storage (optional, per request): add &session=<id>&x=&y=&z=&alt=&capturedAt=<ISO-8601>
 and the frame plus its detection are saved with image_store; the response then also has
@@ -47,6 +54,34 @@ PROMPTS = {
     "phone": ["cell phone", "smartphone", "mobile phone"],
 }
 
+# Area scan (target=all): every object class the parking lot can contain. Category names match Unity's ScanMission.
+SCAN_ALL = "all"
+SCAN_PROMPTS = {
+    "key": ["key", "keys", "car key"],
+    "phone": ["cell phone", "smartphone"],
+    "wallet": ["wallet"],
+    "laptop": ["laptop"],
+    "purse": ["purse", "handbag"],
+    "backpack": ["backpack"],
+    "headphones": ["headphones"],
+    "umbrella": ["umbrella"],
+    "bottle": ["water bottle", "bottle"],
+    "can": ["soda can"],
+    "cup": ["coffee cup", "cup"],
+    "cone": ["traffic cone"],
+    "car": ["car", "van", "taxi", "police car"],
+}
+
+
+def _iou(a, b):
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    ix = max(0.0, min(ax + aw, bx + bw) - max(ax, bx))
+    iy = max(0.0, min(ay + ah, by + bh) - max(ay, by))
+    inter = ix * iy
+    union = aw * ah + bw * bh - inter
+    return inter / union if union > 0 else 0.0
+
 
 class YoloWorldEngine:
     name = "yolo-world"
@@ -55,6 +90,9 @@ class YoloWorldEngine:
         from ultralytics import YOLOWorld
 
         self.imgsz = imgsz
+        self.weights = weights
+        self.scan = None  # second model for target=all, created on the first scan frame
+        self.scan_lock = threading.Lock()
         self.model = YOLOWorld(weights)
         self.labels, self.label_category = [], []
         for category, prompts in PROMPTS.items():
@@ -76,6 +114,68 @@ class YoloWorldEngine:
             out.append((c, (x1 / W, y1 / H, (x2 - x1) / W, (y2 - y1) / H), self.labels[int(k)]))
         out.sort(key=lambda d: -d[0])
         return out
+
+    def detect_all(self, image, conf):
+        """Every object of every scan category: [(confidence, (x, y, w, h) normalized, label, category)], best first.
+        Overlapping boxes of different categories (e.g. purse/backpack on one item) keep only the best."""
+        with self.scan_lock:
+            if self.scan is None:
+                from ultralytics import YOLOWorld
+
+                self.scan = YOLOWorld(self.weights)
+                self.scan_labels, self.scan_category = [], []
+                for category, prompts in SCAN_PROMPTS.items():
+                    for p in prompts:
+                        self.scan_labels.append(p)
+                        self.scan_category.append(category)
+                self.scan.set_classes(self.scan_labels)
+            r = self.scan.predict(image, imgsz=self.imgsz, conf=min(conf, 0.05), iou=0.5, verbose=False)[0]
+        W, H = image.size
+        cands = []
+        for (x1, y1, x2, y2), c, k in zip(r.boxes.xyxy.tolist(), r.boxes.conf.tolist(), r.boxes.cls.tolist()):
+            cands.append((c, (x1 / W, y1 / H, (x2 - x1) / W, (y2 - y1) / H), self.scan_labels[int(k)],
+                          self.scan_category[int(k)]))
+        cands.sort(key=lambda d: -d[0])
+        kept = []
+        for d in cands:
+            if all(_iou(d[1], k[1]) < 0.6 for k in kept):
+                kept.append(d)
+        return kept
+
+
+class ItemsEngine:
+    """The detector trained on this simulation (VisionServer/train). Closed vocabulary: its four classes."""
+    name = "items"
+    CATEGORY = {"wallet": "wallet", "keys": "key", "phone": "phone", "purse": "purse"}   # model class -> API category
+
+    def __init__(self, weights, imgsz, device=None):
+        from ultralytics import YOLO
+
+        self.imgsz = imgsz
+        self.device = device
+        self.model = YOLO(weights)
+        self.categories = [self.CATEGORY.get(n, n) for _, n in sorted(self.model.names.items())]
+        self.targets = sorted(set(self.categories))
+        self.lock = threading.Lock()
+
+    def _boxes(self, image, conf):
+        # Native size (640 or 1280 frames): the model was trained at full resolution; upscaling hurts small items.
+        imgsz = self.imgsz or max(image.size)
+        with self.lock:
+            r = self.model.predict(image, imgsz=imgsz, conf=conf, iou=0.5, device=self.device, verbose=False)[0]
+        W, H = image.size
+        out = [(c, (x1 / W, y1 / H, (x2 - x1) / W, (y2 - y1) / H), self.model.names[int(k)], self.categories[int(k)])
+               for (x1, y1, x2, y2), c, k in zip(r.boxes.xyxy.tolist(), r.boxes.conf.tolist(), r.boxes.cls.tolist())]
+        out.sort(key=lambda d: -d[0])
+        return out
+
+    def detect(self, image, target):
+        return [(c, b, lbl) for c, b, lbl, cat in self._boxes(image, 0.01) if cat == target]
+
+    def detect_all(self, image, conf):
+        # Overlapping boxes of different classes on one object are all kept: for a search, a second guess
+        # (e.g. wallet vs phone) is useful, and Unity merges sightings by position anyway.
+        return self._boxes(image, min(conf, 0.05))
 
 
 class GeminiEngine:
@@ -117,14 +217,46 @@ class GeminiEngine:
         return [(conf, None, target)]
 
 
+def _box(b):
+    return dict(zip("xywh", (round(v, 4) for v in b)))
+
+
+def run_scan_detection(engine, image_bytes, conf):
+    """target=all: every object above `conf` in "objects"; the top-level fields describe the best one."""
+    t0 = time.perf_counter()
+    result = {"detected": False, "category": SCAN_ALL, "confidence": 0.0, "hasBox": False,
+              "bbox": {"x": 0, "y": 0, "w": 0, "h": 0}, "engine": engine.name, "latencyMs": 0.0,
+              "error": "", "candidates": [], "objects": []}
+    try:
+        if not hasattr(engine, "detect_all"):
+            raise ValueError(f"engine '{engine.name}' does not support target=all (area scan); use yolo-world")
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        cands = engine.detect_all(image, conf)
+        result["candidates"] = [{"confidence": round(c, 4), "label": f"{cat}: {lbl}", "bbox": _box(b)}
+                                for c, b, lbl, cat in cands[:5]]
+        result["objects"] = [{"category": cat, "label": lbl, "confidence": round(c, 4), "bbox": _box(b)}
+                             for c, b, lbl, cat in cands if c >= conf]
+        if result["objects"]:
+            best = result["objects"][0]
+            result.update(detected=True, category=best["category"], confidence=best["confidence"],
+                          hasBox=True, bbox=best["bbox"])
+    except Exception as e:  # report, don't crash the server
+        result["error"] = f"{type(e).__name__}: {e}"
+    result["latencyMs"] = round((time.perf_counter() - t0) * 1000, 1)
+    return result
+
+
 def run_detection(engine, image_bytes, target, conf):
+    if target == SCAN_ALL:
+        return run_scan_detection(engine, image_bytes, conf)
     t0 = time.perf_counter()
     result = {"detected": False, "category": target, "confidence": 0.0, "hasBox": False,
               "bbox": {"x": 0, "y": 0, "w": 0, "h": 0}, "engine": engine.name, "latencyMs": 0.0,
               "error": "", "candidates": []}
     try:
-        if target not in PROMPTS:
-            raise ValueError(f"unknown target '{target}', expected one of {sorted(PROMPTS)}")
+        targets = getattr(engine, "targets", sorted(PROMPTS))
+        if target not in targets:
+            raise ValueError(f"unknown target '{target}', expected one of {targets}")
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         cands = engine.detect(image, target)
         result["candidates"] = [{"confidence": round(c, 4), "label": lbl,
@@ -219,7 +351,7 @@ def open_store(args):
         return None, True
 
 
-def make_handler(engine, store=None, storage_enabled=False):
+def make_handler(engine, store=None, storage_enabled=False, report_root=None):
     class Handler(BaseHTTPRequestHandler):
         def _send(self, code, obj):
             body = json.dumps(obj).encode()
@@ -239,12 +371,16 @@ def make_handler(engine, store=None, storage_enabled=False):
 
         def do_GET(self):
             if urlparse(self.path).path == "/health":
-                self._send(200, {"ok": True, "engine": engine.name, "targets": sorted(PROMPTS)})
+                targets = getattr(engine, "targets", sorted(PROMPTS))
+                self._send(200, {"ok": True, "engine": engine.name, "targets": list(targets) + [SCAN_ALL],
+                                 "scanCategories": list(targets) if hasattr(engine, "targets") else list(SCAN_PROMPTS)})
             else:
                 self._send(404, {"error": "not found"})
 
         def do_POST(self):
             url = urlparse(self.path)
+            if url.path == "/report":
+                return self._report()
             if url.path != "/detect":
                 return self._send(404, {"error": "not found"})
             q = parse_qs(url.query)
@@ -255,11 +391,31 @@ def make_handler(engine, store=None, storage_enabled=False):
             res = run_detection(engine, data, target, conf)
             if storage_enabled and q.get("session", [""])[0]:
                 res.update(store_frame(store, data, q, res, received_at))
+            if target == SCAN_ALL and not res["error"]:
+                print(f"[scan]   {len(res['objects'])} object(s): "
+                      + (", ".join(f"{o['category']} {o['confidence']:.2f}" for o in res["objects"]) or "-")
+                      + f"  {res['latencyMs']:.0f} ms"
+                      + (f" image={res['imageId']}{' (dup)' if res['duplicate'] else ''}" if res.get("imageId") else ""),
+                      flush=True)
+                return self._send(200, res)
             print(f"[detect] {target:5s} detected={res['detected']!s:5s} conf={res['confidence']:.2f} "
                   f"{res['latencyMs']:.0f} ms {res['error']}"
                   + (f" image={res['imageId']}{' (dup)' if res['duplicate'] else ''}" if res.get("imageId") else ""),
                   flush=True)
             self._send(200, res)
+
+        def _report(self):
+            """Unity's ScanMission posts its scan summary; report.py writes the HTML report and evidence images."""
+            try:
+                payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+                import report
+
+                out = report.build_report(payload, store, report_root)
+                print(f"[report] {out['html']}", flush=True)
+                self._send(200, {"ok": True, "html": out["html"], "dir": out["dir"], "error": ""})
+            except Exception as e:
+                print(f"[report] ERROR {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+                self._send(200, {"ok": False, "html": "", "dir": "", "error": f"{type(e).__name__}: {e}"})
 
         def log_message(self, *args):
             pass
@@ -267,29 +423,43 @@ def make_handler(engine, store=None, storage_enabled=False):
     return Handler
 
 
+ITEMS_WEIGHTS = os.path.join(HERE, "models", "drone_items.pt")
+
+
 def build_engine(args):
     if args.engine == "gemini":
         return GeminiEngine(args.gemini_model)
-    return YoloWorldEngine(args.weights, args.imgsz)
+    if args.engine == "items":
+        return ItemsEngine(args.weights or ITEMS_WEIGHTS, args.imgsz)   # None: each frame at its own size
+    return YoloWorldEngine(args.weights, args.imgsz or 640)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--engine", choices=["yolo-world", "gemini"], default="yolo-world")
+    ap.add_argument("--engine", choices=["items", "yolo-world", "gemini"], default=None,
+                    help="default: items if models/drone_items.pt exists, else yolo-world")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8765)
-    ap.add_argument("--weights", default=os.path.join(HERE, "models", "yolov8s-worldv2.pt"))
-    ap.add_argument("--imgsz", type=int, default=640)
+    ap.add_argument("--weights", default=None,
+                    help="YOLO-World weights (default: models/yolov8s-worldv2.pt, else models/yolov8s-world.pt if present)")
+    ap.add_argument("--imgsz", type=int, default=None, help="inference size (items: the frame's own size, yolo-world: 640)")
     ap.add_argument("--gemini-model", default=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"))
     ap.add_argument("--store-dir", default=os.environ.get("VISION_STORE_DIR", os.path.join(REPO, "drone_images")))
     ap.add_argument("--no-store", action="store_true", default=os.environ.get("VISION_STORE", "1") == "0",
                     help="don't save frames (also VISION_STORE=0)")
     args = ap.parse_args()
+    if args.engine is None:
+        args.engine = "items" if os.path.exists(ITEMS_WEIGHTS) else "yolo-world"
+    if args.weights is None and args.engine == "yolo-world":
+        v2, v1 = (os.path.join(HERE, "models", f) for f in ("yolov8s-worldv2.pt", "yolov8s-world.pt"))
+        args.weights = v1 if not os.path.exists(v2) and os.path.exists(v1) else v2
 
     engine = build_engine(args)
     store, storage_enabled = open_store(args)
     print(f"Vision server: engine={engine.name} on http://{args.host}:{args.port}  (POST /detect, GET /health)", flush=True)
-    ThreadingHTTPServer((args.host, args.port), make_handler(engine, store, storage_enabled)).serve_forever()
+    report_root = os.path.join(store.root if store else args.store_dir, "reports")
+    print(f"Scan reports: {report_root}", flush=True)
+    ThreadingHTTPServer((args.host, args.port), make_handler(engine, store, storage_enabled, report_root)).serve_forever()
 
 
 if __name__ == "__main__":

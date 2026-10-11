@@ -13,8 +13,24 @@ public class CityLife : MonoBehaviour
     const float Street = 10f, Walk = 3f, RoadTop = -0.5f, WalkTop = -0.42f;
     static readonly Vector2 LotCenter = new Vector2(40f, 30f);
 
+    /// The city's built-up area (x, z): from the first to the last street, sidewalks included.
+    public static Rect StreetArea => Rect.MinMaxRect(XStreets[0] - Street, ZStreets[0] - Street,
+                                                    XStreets[XStreets.Length - 1] + Street, ZStreets[ZStreets.Length - 1] + Street);
+
+    /// True if a ground point (x, z) is on a street's carriageway (where traffic drives).
+    public static bool IsRoad(float x, float z)
+    {
+        foreach (var s in XStreets) if (Mathf.Abs(x - s) <= Street * 0.5f) return true;
+        foreach (var s in ZStreets) if (Mathf.Abs(z - s) <= Street * 0.5f) return true;
+        return false;
+    }
+
+    /// True for the moving traffic and pedestrians this script creates (they block the view only temporarily).
+    public static bool IsMover(Transform t) =>
+        t != null && (t.root.name.StartsWith("Traffic ") || t.root.name == "Pedestrian");
+
     public int carsPerBlock = 5;       // evenly spaced around each block's lane
-    public int people = 1200;
+    public int people = 200;           // 1200 made the WebGL build run out of memory at startup (Chrome "OOM")
     public float carSpeed = 8f;        // m/s
     public float walkSpeed = 1.3f;     // m/s
     public float range = 170f;         // only blocks this close to the lot get traffic
